@@ -6,13 +6,8 @@ const logger = require('../utils/logger');
 const JWT_SECRET = process.env.JWT_SECRET || 'fifa_super_secret_jwt_key_2026';
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 
-// Generate JWT Token
 const generateToken = (id, region, role) => {
-  return jwt.sign(
-    { id, region, role },
-    JWT_SECRET,
-    { expiresIn: JWT_EXPIRES_IN }
-  );
+  return jwt.sign({ id, region, role }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 };
 
 const normalizeRegion = (region) => {
@@ -28,35 +23,33 @@ exports.register = async (req, res, next) => {
     const { full_name, email, password, phone, region } = req.body;
     const targetRegion = normalizeRegion(region);
 
-    // Check if user already exists across any shard
     const existingUser = await UserModel.findByEmail(email);
     if (existingUser) {
       return res.status(409).json({
         success: false,
-        message: 'This email address is already registered in our system.',
+        message: 'This email address is already registered.',
       });
     }
 
-    // Hash password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Create user in specified regional shard
-    const { user, region: savedRegion } = await UserModel.create({
-      full_name,
-      email,
-      password: hashedPassword,
-      phone,
-    }, targetRegion);
+    const { user, region: savedRegion } = await UserModel.create(
+      {
+        full_name,
+        email,
+        password: hashedPassword,
+        phone,
+      },
+      targetRegion
+    );
 
-    // Generate token containing user's home region
     const token = generateToken(user.id, savedRegion, user.role);
-
-    logger.info(`New user registered in [${savedRegion}] shard: ${email}`);
+    logger.info(`New user registered in [${savedRegion}]: ${email}`);
 
     res.status(201).json({
       success: true,
-      message: `Account successfully created in ${savedRegion.toUpperCase()} shard!`,
+      message: 'Account created successfully.',
       token,
       user: {
         id: user.id,
@@ -77,7 +70,6 @@ exports.login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-    // Find user across all regional shards
     const userRecord = await UserModel.findByEmail(email);
     if (!userRecord) {
       return res.status(401).json({
@@ -88,7 +80,6 @@ exports.login = async (req, res, next) => {
 
     const { user, region } = userRecord;
 
-    // Check password match
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({
@@ -97,14 +88,12 @@ exports.login = async (req, res, next) => {
       });
     }
 
-    // Generate token
     const token = generateToken(user.id, region, user.role);
-
-    logger.info(`User logged in from [${region}] shard: ${email}`);
+    logger.info(`User logged in [${region}]: ${email}`);
 
     res.status(200).json({
       success: true,
-      message: `Login successful! Located in ${region.toUpperCase()} shard.`,
+      message: 'Signed in successfully.',
       token,
       user: {
         id: user.id,

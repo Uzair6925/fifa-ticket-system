@@ -1,27 +1,11 @@
-/**
- * shardRouter.js — PostgreSQL Shard Router & Distributed Manager
- * ─────────────────────────────────────────────────────────────
- * Geographically partitions the system across 4 Regional Shards:
- *  - fifa_europe
- *  - fifa_asia
- *  - fifa_north_am
- *  - fifa_south_am
- *
- * SHARDING KEY: stadium_region (Venue Location)
- * Supports both real PostgreSQL clusters and an in-memory high-speed
- * Distributed Fake Database for seamless academic presentation & millions-user testing.
- */
-
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 const { Pool } = require('pg');
 const fakeDb = require('./fakeDatabase');
 const logger = require('../utils/logger');
 
-// Check if Fake Database mode is activated (Default: true for frictionless local demo)
 const useFakeDb = process.env.USE_FAKE_DB !== 'false';
 
-// ─── Create Mock Shard Pool (In-Memory Distributed Simulation) ────
 const createMockPool = (region) => ({
   query: async (text, values = []) => fakeDb.executeSql(region, text, values),
   connect: async () => ({
@@ -30,7 +14,6 @@ const createMockPool = (region) => ({
   }),
 });
 
-// ─── Create Real or Mock Pools for Each Shard ─────────────────────
 const shardPools = {
   europe: useFakeDb
     ? createMockPool('europe')
@@ -85,33 +68,23 @@ const shardPools = {
       }),
 };
 
-// Log active mode
 if (useFakeDb) {
-  logger.info('📦 [ShardRouter] 4 Regional Shards initialized in Fake / In-Memory Sharded Mode (fifa_europe, fifa_asia, fifa_north_am, fifa_south_am)');
+  logger.info('Regional database nodes initialized in in-memory mode');
 } else {
-  logger.info('📦 [ShardRouter] Connected to Live PostgreSQL Regional Shards');
+  logger.info('Connected to live PostgreSQL regional nodes');
 }
 
-// ─── Shard Mapping: Country → Region ─────────────────────────────
 const countryToShard = {
-  // Europe
   germany: 'europe', france: 'europe', spain: 'europe',
   italy: 'europe', england: 'europe', portugal: 'europe',
   netherlands: 'europe', belgium: 'europe', croatia: 'europe',
-
-  // Asia
   japan: 'asia', south_korea: 'asia', australia: 'asia',
   saudi_arabia: 'asia', iran: 'asia', qatar: 'asia',
-
-  // North America
   usa: 'north_america', canada: 'north_america', mexico: 'north_america',
-
-  // South America
   brazil: 'south_america', argentina: 'south_america',
   colombia: 'south_america', chile: 'south_america', uruguay: 'south_america',
 };
 
-// ─── Normalize Region Helper ──────────────────────────────────────
 const normalizeRegionName = (region) => {
   let norm = region?.toLowerCase().replace(/ /g, '_');
   if (norm === 'north_am') norm = 'north_america';
@@ -119,41 +92,37 @@ const normalizeRegionName = (region) => {
   return norm;
 };
 
-// ─── Get Shard Pool by Region Name ───────────────────────────────
 const getShardByRegion = (region) => {
   const normalizedRegion = normalizeRegionName(region);
   const pool = shardPools[normalizedRegion];
   if (!pool) {
-    throw new Error(`❌ No shard found for region: "${region}". Valid: europe | asia | north_america | south_america`);
+    throw new Error(`Invalid region: "${region}". Valid regions: europe, asia, north_america, south_america`);
   }
   return pool;
 };
 
-// ─── Get Shard Pool by Country ────────────────────────────────────
 const getShardByCountry = (country) => {
   const normalizedCountry = country?.toLowerCase().replace(/ /g, '_');
   const region = countryToShard[normalizedCountry];
   if (!region) {
-    throw new Error(`❌ Country "${country}" not mapped to any shard.`);
+    throw new Error(`Country "${country}" is not mapped to a region.`);
   }
   return shardPools[region];
 };
 
-// ─── Get ALL Shards (for global queries across all 4 shards) ──────
 const getAllShards = () => {
   return Object.entries(shardPools).map(([region, pool]) => ({ region, pool }));
 };
 
-// ─── Test All DB Connections ──────────────────────────────────────
 const testAllConnections = async () => {
   for (const [region, pool] of Object.entries(shardPools)) {
     try {
       const client = await pool.connect();
       await client.query('SELECT 1');
       client.release();
-      logger.info(`✅ [ShardRouter] Connected to ${region.toUpperCase()} shard`);
+      logger.info(`Connected to ${region.toUpperCase()} database node`);
     } catch (err) {
-      logger.error(`❌ [ShardRouter] Failed to connect to ${region.toUpperCase()} shard: ${err.message}`);
+      logger.error(`Failed to connect to ${region.toUpperCase()} node: ${err.message}`);
     }
   }
 };

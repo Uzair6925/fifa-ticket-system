@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Ticket, Calendar, MapPin, ShieldCheck, Download, AlertCircle } from 'lucide-react';
+import { Ticket, Calendar, MapPin } from 'lucide-react';
 import { api } from '../services/api';
 
 export default function MyBookings({ user, onGoToMatches }) {
@@ -28,8 +28,8 @@ export default function MyBookings({ user, onGoToMatches }) {
   if (loading) {
     return (
       <div className="py-24 text-center">
-        <div className="w-8 h-8 border-3 border-amber-400 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
-        <p className="text-xs text-gray-400">Loading your official match tickets...</p>
+        <div className="w-8 h-8 border-2 border-amber-400 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+        <p className="text-xs text-gray-400">Loading your match passes...</p>
       </div>
     );
   }
@@ -42,13 +42,13 @@ export default function MyBookings({ user, onGoToMatches }) {
         </div>
         <h3 className="text-xl font-heading font-extrabold text-white">No Tickets Booked Yet</h3>
         <p className="text-xs text-gray-400 mt-2 leading-relaxed">
-          You haven't reserved any match tickets yet. Browse available World Cup matches across all 4 regional shards!
+          You have not reserved any match passes yet. Explore upcoming tournament fixtures to reserve your seats.
         </p>
         <button
           onClick={onGoToMatches}
           className="btn-primary mt-6 text-xs uppercase tracking-wider"
         >
-          Browse Upcoming Matches
+          View Fixtures
         </button>
       </div>
     );
@@ -58,15 +58,21 @@ export default function MyBookings({ user, onGoToMatches }) {
     <div className="space-y-6">
       <div className="flex items-center justify-between pb-4 border-b border-white/10">
         <div>
-          <h2 className="text-2xl font-heading font-black text-white">My World Cup Passes</h2>
+          <h2 className="text-2xl font-heading font-black text-white">My Match Passes</h2>
           <p className="text-xs text-gray-400 mt-0.5">
-            Confirmed match reservations stored across your distributed account.
+            Confirmed tournament reservations associated with your account.
           </p>
         </div>
         <span className="text-xs font-bold text-amber-400 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20">
-          {bookings.length} {bookings.length === 1 ? 'Ticket' : 'Tickets'} Confirmed
+          {bookings.length} {bookings.length === 1 ? 'Pass' : 'Passes'} Confirmed
         </span>
       </div>
+
+      {errorMsg && (
+        <div className="p-4 rounded-xl bg-rose-500/15 border border-rose-500/30 text-xs text-rose-300">
+          {errorMsg}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {bookings.map((booking) => {
@@ -85,10 +91,9 @@ export default function MyBookings({ user, onGoToMatches }) {
             >
               <div className="flex items-center justify-between mb-4">
                 <span className="text-[10px] uppercase font-bold tracking-widest text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20">
-                  FIFA Match Pass
+                  Official FIFA Pass
                 </span>
-                <span className="text-[10px] bg-emerald-500/20 text-emerald-400 font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                  <ShieldCheck className="w-3 h-3" />
+                <span className="text-[10px] bg-emerald-500/20 text-emerald-400 font-bold px-2.5 py-0.5 rounded-full">
                   {booking.booking_status?.toUpperCase()}
                 </span>
               </div>
@@ -108,7 +113,6 @@ export default function MyBookings({ user, onGoToMatches }) {
                 </div>
               </div>
 
-              {/* Seats Pill List */}
               <div className="my-4 pt-4 border-t border-white/5 flex flex-wrap gap-1.5">
                 {booking.seats?.map((seat, idx) => (
                   <span
@@ -120,7 +124,6 @@ export default function MyBookings({ user, onGoToMatches }) {
                 ))}
               </div>
 
-              {/* Footer info */}
               <div className="pt-3 border-t border-white/10 flex items-center justify-between">
                 <div>
                   <p className="text-[10px] text-gray-500">Total Paid</p>
@@ -128,7 +131,7 @@ export default function MyBookings({ user, onGoToMatches }) {
                 </div>
 
                 <div className="text-right">
-                  <span className="text-[9px] text-gray-500 font-mono block">ID: {booking.booking_id?.slice(0, 12)}...</span>
+                  <span className="text-[9px] text-gray-500 font-mono block">Ref: {booking.booking_id?.slice(0, 12)}</span>
                   <span className="font-mono text-xs text-gray-400 tracking-widest">|||| |||||| ||</span>
                 </div>
               </div>

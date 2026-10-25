@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { X, Lock, Mail, User, Phone, Globe2, Eye, EyeOff, ShieldCheck, CheckCircle2, AlertCircle, Sparkles } from 'lucide-react';
+import { X, Lock, Mail, User, Eye, EyeOff, CheckCircle2, AlertCircle } from 'lucide-react';
 import { api } from '../services/api';
 
 export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
   if (!isOpen) return null;
 
-  const [mode, setMode] = useState('login'); // 'login' | 'register'
+  const [mode, setMode] = useState('login');
   const [formData, setFormData] = useState({
     full_name: '',
     email: '',
@@ -18,7 +18,6 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
-  // Password rules validation logic
   const password = formData.password;
   const checks = {
     length: password.length >= 8 && password.length <= 64,
@@ -64,19 +63,18 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
       if (mode === 'register') {
         const res = await api.register(formData);
         if (!res.success) {
-          setErrorMsg(res.message || 'Registration failed. Please check the fields.');
+          setErrorMsg(res.message || 'Registration failed. Please verify your details.');
           setLoading(false);
           return;
         }
 
-        // Store JWT
         localStorage.setItem('fifa_token', res.token);
         localStorage.setItem('fifa_user', JSON.stringify(res.user));
-        setSuccessMsg(`Welcome to FIFA 2026! Registered in ${res.user.home_region?.toUpperCase()} shard.`);
+        setSuccessMsg('Account created successfully.');
         setTimeout(() => {
           onAuthSuccess(res.user);
           onClose();
-        }, 900);
+        }, 700);
       } else {
         const res = await api.login({
           email: formData.email,
@@ -91,14 +89,14 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
 
         localStorage.setItem('fifa_token', res.token);
         localStorage.setItem('fifa_user', JSON.stringify(res.user));
-        setSuccessMsg(`Login successful! Connected to ${res.user.home_region?.toUpperCase()} shard.`);
+        setSuccessMsg('Signed in successfully.');
         setTimeout(() => {
           onAuthSuccess(res.user);
           onClose();
-        }, 900);
+        }, 700);
       }
     } catch (err) {
-      setErrorMsg('Network error connecting to backend API. Please make sure the server is running on port 5000.');
+      setErrorMsg('Unable to connect to the authentication service. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -106,15 +104,10 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
-      <div 
+      <div
         className="relative w-full max-w-lg glass-panel-gold p-6 sm:p-8 shadow-2xl border border-white/10 overflow-hidden animate-slide-up"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Glow ambient backdrops */}
-        <div className="absolute -top-24 -left-24 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-24 -right-24 w-48 h-48 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-
-        {/* Close Button */}
         <button
           onClick={onClose}
           className="absolute top-5 right-5 p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
@@ -122,23 +115,20 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
           <X className="w-5 h-5" />
         </button>
 
-        {/* Header Branding */}
         <div className="text-center mb-6">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 text-xs font-semibold mb-2">
-            <Sparkles className="w-3.5 h-3.5" />
-            FIFA Ticketing Authentication
+            FIFA World Cup 2026 Portal
           </div>
           <h2 className="text-2xl font-heading font-extrabold text-white">
-            {mode === 'login' ? 'Sign In to Your Account' : 'Create FIFA Fan Account'}
+            {mode === 'login' ? 'Sign In to Your Account' : 'Create Your Account'}
           </h2>
           <p className="text-xs text-gray-400 mt-1">
             {mode === 'login'
-              ? 'Access world cup tickets and real-time seat reservation'
-              : 'Registered directly into your preferred Regional Database Shard'}
+              ? 'Access your match passes and manage seat reservations'
+              : 'Register to book official tournament tickets in your region'}
           </p>
         </div>
 
-        {/* Mode Selector Tabs */}
         <div className="flex bg-white/5 p-1 rounded-xl mb-6 border border-white/5">
           <button
             type="button"
@@ -160,11 +150,10 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
                 : 'text-gray-400 hover:text-white'
             }`}
           >
-            Register (New Fan)
+            Create Account
           </button>
         </div>
 
-        {/* Error / Success Notifications */}
         {errorMsg && (
           <div className="mb-4 p-3.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-2.5">
             <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0 mt-0.5" />
@@ -178,10 +167,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
           </div>
         )}
 
-        {/* Form Body */}
         <form onSubmit={handleSubmit} className="space-y-4">
-          
-          {/* Full Name (Register Only) */}
           {mode === 'register' && (
             <div>
               <label className="block text-xs font-semibold text-gray-300 mb-1.5">Full Name</label>
@@ -193,14 +179,13 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
                   value={formData.full_name}
                   onChange={handleChange}
                   required
-                  placeholder="e.g. Lionel Messi"
+                  placeholder="Enter your full name"
                   className="w-full pl-10 pr-4 py-2.5 bg-white/5 border border-white/10 rounded-xl text-xs text-white placeholder-gray-500 focus:outline-none focus:border-amber-400 transition-colors"
                 />
               </div>
             </div>
           )}
 
-          {/* Email Address */}
           <div>
             <label className="block text-xs font-semibold text-gray-300 mb-1.5">Email Address</label>
             <div className="relative">
@@ -217,7 +202,6 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
             </div>
           </div>
 
-          {/* Password with Eye Toggle */}
           <div>
             <div className="flex items-center justify-between mb-1.5">
               <label className="text-xs font-semibold text-gray-300">Password</label>
@@ -235,7 +219,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
                 value={formData.password}
                 onChange={handleChange}
                 required
-                placeholder="••••••••••••"
+                placeholder="Enter your password"
                 className="w-full pl-10 pr-10 py-2.5 bg-white/5 border border-white/10 rounded-xl text-xs text-white placeholder-gray-500 focus:outline-none focus:border-amber-400 transition-colors"
               />
               <button
@@ -247,10 +231,8 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
               </button>
             </div>
 
-            {/* Registration Password Checklist & Strength Meter */}
             {mode === 'register' && (
               <div className="mt-2.5 p-3 rounded-xl bg-white/[0.03] border border-white/5 space-y-2">
-                {/* Strength Bar */}
                 <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden flex gap-1">
                   {[0, 1, 2, 3, 4].map((step) => (
                     <div
@@ -262,7 +244,6 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
                   ))}
                 </div>
 
-                {/* Validation Requirements Checklist */}
                 <div className="grid grid-cols-2 gap-1.5 text-[11px] text-gray-400 pt-1">
                   <div className={`flex items-center gap-1.5 ${checks.length ? 'text-emerald-400' : ''}`}>
                     <CheckCircle2 className={`w-3.5 h-3.5 ${checks.length ? 'text-emerald-400' : 'text-gray-600'}`} />
@@ -270,58 +251,55 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
                   </div>
                   <div className={`flex items-center gap-1.5 ${checks.hasDigit ? 'text-emerald-400' : ''}`}>
                     <CheckCircle2 className={`w-3.5 h-3.5 ${checks.hasDigit ? 'text-emerald-400' : 'text-gray-600'}`} />
-                    <span>1+ number (0-9)</span>
+                    <span>At least 1 number</span>
                   </div>
                   <div className={`flex items-center gap-1.5 ${checks.hasUpper ? 'text-emerald-400' : ''}`}>
                     <CheckCircle2 className={`w-3.5 h-3.5 ${checks.hasUpper ? 'text-emerald-400' : 'text-gray-600'}`} />
-                    <span>1+ uppercase (A-Z)</span>
+                    <span>Uppercase letter</span>
                   </div>
                   <div className={`flex items-center gap-1.5 ${checks.hasLower ? 'text-emerald-400' : ''}`}>
                     <CheckCircle2 className={`w-3.5 h-3.5 ${checks.hasLower ? 'text-emerald-400' : 'text-gray-600'}`} />
-                    <span>1+ lowercase (a-z)</span>
+                    <span>Lowercase letter</span>
                   </div>
                   <div className={`flex items-center gap-1.5 col-span-2 ${checks.hasSpecial ? 'text-emerald-400' : ''}`}>
                     <CheckCircle2 className={`w-3.5 h-3.5 ${checks.hasSpecial ? 'text-emerald-400' : 'text-gray-600'}`} />
-                    <span>1+ special symbol (!@#$%^&*)</span>
+                    <span>Special character (!@#$%^&*)</span>
                   </div>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Regional Shard Selector (Register Only) */}
           {mode === 'register' && (
             <div>
-              <label className="block text-xs font-semibold text-gray-300 mb-1.5 flex items-center justify-between">
-                <span>Assign Home Database Shard</span>
-                <span className="text-[10px] text-amber-400 font-mono">DDB Partition</span>
+              <label className="block text-xs font-semibold text-gray-300 mb-1.5">
+                Primary Region
               </label>
               <div className="grid grid-cols-2 gap-2">
                 {[
-                  { id: 'europe', label: '🇪🇺 Europe', desc: 'fifa_europe' },
-                  { id: 'asia', label: '🇦ジア Asia', desc: 'fifa_asia' },
-                  { id: 'north_america', label: '🇺🇸 North America', desc: 'fifa_north_am' },
-                  { id: 'south_america', label: '🇧🇷 South America', desc: 'fifa_south_am' },
-                ].map((shard) => (
+                  { id: 'europe', label: 'Europe', desc: 'London / European Venues' },
+                  { id: 'asia', label: 'Asia', desc: 'Lusail / Asian Venues' },
+                  { id: 'north_america', label: 'North America', desc: 'New York / NA Venues' },
+                  { id: 'south_america', label: 'South America', desc: 'Rio / SA Venues' },
+                ].map((regionItem) => (
                   <button
-                    key={shard.id}
+                    key={regionItem.id}
                     type="button"
-                    onClick={() => setFormData((prev) => ({ ...prev, region: shard.id }))}
+                    onClick={() => setFormData((prev) => ({ ...prev, region: regionItem.id }))}
                     className={`p-2.5 rounded-xl border text-left transition-all ${
-                      formData.region === shard.id
+                      formData.region === regionItem.id
                         ? 'bg-amber-500/15 border-amber-400/60 text-white shadow-sm shadow-amber-500/20'
                         : 'bg-white/5 border-white/5 text-gray-400 hover:border-white/20'
                     }`}
                   >
-                    <p className="text-xs font-bold text-white leading-tight">{shard.label}</p>
-                    <p className="text-[10px] text-gray-500 font-mono mt-0.5">{shard.desc}</p>
+                    <p className="text-xs font-bold text-white leading-tight">{regionItem.label}</p>
+                    <p className="text-[10px] text-gray-500 mt-0.5">{regionItem.desc}</p>
                   </button>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Submit Button */}
           <button
             type="submit"
             disabled={loading}
@@ -330,34 +308,33 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
             {loading ? (
               <span className="flex items-center gap-2">
                 <span className="w-3.5 h-3.5 border-2 border-black border-t-transparent rounded-full animate-spin" />
-                Connecting Shard...
+                Processing...
               </span>
             ) : mode === 'login' ? (
-              'Sign In to FIFA'
+              'Sign In'
             ) : (
-              'Register in Regional Shard'
+              'Create Account'
             )}
           </button>
         </form>
 
-        {/* Quick Demo Credentials Footer (Sign In Mode) */}
         {mode === 'login' && (
           <div className="mt-6 pt-5 border-t border-white/10 text-center">
-            <p className="text-[11px] text-gray-400 mb-2 font-medium">⚡ Quick Demo One-Click Fill:</p>
+            <p className="text-[11px] text-gray-400 mb-2 font-medium">Demo Accounts:</p>
             <div className="flex items-center justify-center gap-2">
               <button
                 type="button"
                 onClick={() => handleQuickDemo('admin')}
                 className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] text-amber-400 font-medium transition-colors"
               >
-                👑 Admin Account
+                Administrator
               </button>
               <button
                 type="button"
                 onClick={() => handleQuickDemo('fan')}
                 className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] text-emerald-400 font-medium transition-colors"
               >
-                ⚽ Fan Account (Messi)
+                Standard Member
               </button>
             </div>
           </div>

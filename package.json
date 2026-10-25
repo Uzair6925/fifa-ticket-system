@@ -1,10 +1,10 @@
 {
   "name": "fifa-ticketing-system-distributed",
   "version": "1.0.0",
-  "description": "FIFA World Cup Ticketing System — Distributed Database Architecture with 4 Regional Shards and Redis Mutex Locking",
+  "description": "FIFA World Cup 2026 Ticketing Platform",
   "main": "fifa-ticket-backend/src/server.js",
   "scripts": {
-    "build": "npm install --prefix fifa-ticket-backend && npm install --prefix fifa-ticket-frontend && npm run build --prefix fifa-ticket-frontend",
+    "build": "npm install --prefix fifa-ticket-backend && npm install --include=dev --prefix fifa-ticket-frontend && npm run build --prefix fifa-ticket-frontend",
     "start": "node fifa-ticket-backend/src/server.js",
     "dev": "concurrently -k -n \"BACKEND,FRONTEND\" -c \"cyan.bold,yellow.bold\" \"cd fifa-ticket-backend && npm run dev\" \"cd fifa-ticket-frontend && npm run dev\"",
     "build:frontend": "cd fifa-ticket-frontend && npm run build",
@@ -14,12 +14,9 @@
   "keywords": [
     "fifa",
     "ticketing",
-    "distributed-database",
-    "sharding",
-    "redis-lock",
-    "saga-pattern"
+    "booking"
   ],
-  "author": "BSCS Group — UBIT University of Karachi",
+  "author": "BSCS Group - UBIT University of Karachi",
   "devDependencies": {
     "concurrently": "^9.1.2"
   }

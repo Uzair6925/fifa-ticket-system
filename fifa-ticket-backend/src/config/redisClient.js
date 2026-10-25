@@ -6,16 +6,13 @@ const logger = require('../utils/logger');
 let redisClient = null;
 let isMockRedis = process.env.USE_FAKE_DB !== 'false';
 
-// ─── In-Memory Distributed Lock & Cache Engine (Redis Simulator) ──────────
-const inMemoryLocks = new Map(); // lockKey -> { userId, expiresAt }
-const inMemoryCache = new Map(); // cacheKey -> { value, expiresAt }
+const inMemoryLocks = new Map();
+const inMemoryCache = new Map();
 
-// ─── Connect Redis ────────────────────────────────────────────────
 const connectRedis = async () => {
-  // If in fake DB mode or USE_FAKE_DB is not explicitly false, use mock Redis directly
   if (process.env.USE_FAKE_DB !== 'false') {
     isMockRedis = true;
-    logger.info('⚡ [Redis Lock Coordinator] Running in High-Speed In-Memory Simulation mode (Atomic NX & TTL enabled)');
+    logger.info('Reservation lock coordinator running in in-memory mode');
     return null;
   }
 
@@ -38,7 +35,7 @@ const connectRedis = async () => {
     });
 
     client.on('connect', () => {
-      logger.info('✅ Redis connected successfully');
+      logger.info('Redis connected successfully');
     });
 
     await client.connect();
@@ -46,20 +43,18 @@ const connectRedis = async () => {
     isMockRedis = false;
     return redisClient;
   } catch (err) {
-    logger.warn(`⚠️ Could not connect to external Redis (${err.message}). Activating In-Memory Distributed Lock Manager (Mock Redis).`);
+    logger.warn(`External Redis unavailable (${err.message}). Using in-memory lock manager.`);
     isMockRedis = true;
     return null;
   }
 };
 
-// ─── Get Redis Client ─────────────────────────────────────────────
 const getRedisClient = () => {
   if (isMockRedis) return null;
   if (!redisClient) throw new Error('Redis not initialized. Call connectRedis() first.');
   return redisClient;
 };
 
-// ─── Cache Helper: SET with TTL ────────────────────────────────────
 const setCache = async (key, value, ttlSeconds = 300) => {
   if (isMockRedis) {
     inMemoryCache.set(key, { value, expiresAt: Date.now() + ttlSeconds * 1000 });
@@ -69,7 +64,6 @@ const setCache = async (key, value, ttlSeconds = 300) => {
   await client.setEx(key, ttlSeconds, JSON.stringify(value));
 };
 
-// ─── Cache Helper: GET ─────────────────────────────────────────────
 const getCache = async (key) => {
   if (isMockRedis) {
     const item = inMemoryCache.get(key);
@@ -85,7 +79,6 @@ const getCache = async (key) => {
   return data ? JSON.parse(data) : null;
 };
 
-// ─── Cache Helper: DELETE ──────────────────────────────────────────
 const deleteCache = async (key) => {
   if (isMockRedis) {
     inMemoryCache.delete(key);
@@ -95,30 +88,25 @@ const deleteCache = async (key) => {
   await client.del(key);
 };
 
-// ─── Seat Hold Lock: Acquire ──────────────────────────────────────
-// Returns true if lock acquired, false if already locked (seat taken)
 const acquireSeatLock = async (matchId, seatId, userId) => {
   const lockKey = `seat_lock:${matchId}:${seatId}`;
-  const ttl = parseInt(process.env.SEAT_HOLD_TTL) || 600; // 10 min
+  const ttl = parseInt(process.env.SEAT_HOLD_TTL) || 600;
 
   if (isMockRedis) {
     const now = Date.now();
     const existing = inMemoryLocks.get(lockKey);
     if (existing && existing.expiresAt > now) {
-      return false; // Already locked by someone else (zero double-booking)
+      return false;
     }
-    // Atomic NX lease acquisition
     inMemoryLocks.set(lockKey, { userId, expiresAt: now + ttl * 1000 });
     return true;
   }
 
   const client = getRedisClient();
-  // NX = only set if NOT exists (atomic operation — no race condition)
   const result = await client.set(lockKey, userId, { NX: true, EX: ttl });
   return result === 'OK';
 };
 
-// ─── Seat Hold Lock: Release ──────────────────────────────────────
 const releaseSeatLock = async (matchId, seatId) => {
   const lockKey = `seat_lock:${matchId}:${seatId}`;
   if (isMockRedis) {
@@ -128,7 +116,6 @@ const releaseSeatLock = async (matchId, seatId) => {
   await deleteCache(lockKey);
 };
 
-// ─── Check if Seat is Locked ──────────────────────────────────────
 const isSeatLocked = async (matchId, seatId) => {
   const lockKey = `seat_lock:${matchId}:${seatId}`;
   if (isMockRedis) {
@@ -145,7 +132,6 @@ const isSeatLocked = async (matchId, seatId) => {
   return val !== null;
 };
 
-// ─── Get Active Holds for a Match ─────────────────────────────────
 const getActiveHoldsForMatch = async (matchId) => {
   if (isMockRedis) {
     const prefix = `seat_lock:${matchId}:`;

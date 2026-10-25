@@ -1,15 +1,8 @@
-/**
- * api.js — Central API Client for FIFA Ticketing Distributed Backend
- * ──────────────────────────────────────────────────────────────────
- * Connects to the Express backend running on http://localhost:5000/api
- * Injects JWT Bearer token automatically from localStorage.
- */
-
 const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost';
 const isViteDev = typeof window !== 'undefined' && window.location.port === '5173';
 
-const API_BASE_URL = isViteDev 
-  ? `http://${hostname}:5000/api` 
+const API_BASE_URL = isViteDev
+  ? `http://${hostname}:5000/api`
   : '/api';
 
 const getAuthHeaders = () => {
@@ -22,7 +15,6 @@ const getAuthHeaders = () => {
 };
 
 export const api = {
-  // ─── Authentication APIs ──────────────────────────────────────────
   register: async (payload) => {
     const res = await fetch(`${API_BASE_URL}/auth/register`, {
       method: 'POST',
@@ -48,7 +40,6 @@ export const api = {
     return res.json();
   },
 
-  // ─── Matches & Stadiums ──────────────────────────────────────────
   getMatches: async () => {
     const res = await fetch(`${API_BASE_URL}/matches`);
     return res.json();
@@ -59,7 +50,6 @@ export const api = {
     return res.json();
   },
 
-  // ─── Seats & Redis Locks ─────────────────────────────────────────
   getSeatsForMatch: async (matchId) => {
     const res = await fetch(`${API_BASE_URL}/seats/match/${matchId}`);
     return res.json();
@@ -83,7 +73,6 @@ export const api = {
     return res.json();
   },
 
-  // ─── Bookings & ACID Transaction ─────────────────────────────────
   confirmBooking: async (matchId, seatIds, paymentDetails) => {
     const res = await fetch(`${API_BASE_URL}/bookings/create`, {
       method: 'POST',
@@ -100,7 +89,6 @@ export const api = {
     return res.json();
   },
 
-  // ─── Distributed System & Admin Overview ─────────────────────────
   getShardOverview: async () => {
     const res = await fetch(`${API_BASE_URL}/admin/overview`);
     return res.json();

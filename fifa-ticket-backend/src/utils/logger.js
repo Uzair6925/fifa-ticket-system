@@ -1,9 +1,3 @@
-/**
- * logger.js — Winston Logger Utility
- * ────────────────────────────────────
- * Console + file logging for production debugging
- */
-
 const { createLogger, format, transports } = require('winston');
 const { combine, timestamp, printf, colorize, errors } = format;
 
@@ -19,13 +13,10 @@ const logger = createLogger({
     logFormat
   ),
   transports: [
-    // Console output (colorized in dev)
     new transports.Console({
       format: combine(colorize(), logFormat),
     }),
-    // File logging for errors
     new transports.File({ filename: 'logs/error.log', level: 'error' }),
-    // All logs
     new transports.File({ filename: 'logs/combined.log' }),
   ],
 });

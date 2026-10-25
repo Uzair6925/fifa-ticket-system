@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { X, Lock, CheckCircle2, ShieldCheck, AlertCircle, Timer, CreditCard, Sparkles, ArrowRight } from 'lucide-react';
+import { X, Lock, CheckCircle2, AlertCircle, Timer, CreditCard } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { api } from '../services/api';
+
+const formatRegion = (r) => {
+  if (!r) return 'Global';
+  return r.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+};
 
 export default function SeatSelectorModal({ match, user, onClose, onAuthRequired, onBookingCompleted }) {
   if (!match) return null;
@@ -10,13 +15,12 @@ export default function SeatSelectorModal({ match, user, onClose, onAuthRequired
   const [loading, setLoading] = useState(true);
   const [selectedSeatIds, setSelectedSeatIds] = useState([]);
   const [heldSeatIds, setHeldSeatIds] = useState([]);
-  const [holdTimer, setHoldTimer] = useState(null); // seconds remaining (e.g. 600)
+  const [holdTimer, setHoldTimer] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState('Visa Credit Card');
   const [bookingConfirmed, setBookingConfirmed] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Fetch seats from backend
   const fetchSeats = async () => {
     try {
       setLoading(true);
@@ -25,7 +29,7 @@ export default function SeatSelectorModal({ match, user, onClose, onAuthRequired
         setSeats(res.data);
       }
     } catch (err) {
-      setErrorMsg('Failed to load seats for this match.');
+      setErrorMsg('Unable to load stadium seating map.');
     } finally {
       setLoading(false);
     }
@@ -35,7 +39,6 @@ export default function SeatSelectorModal({ match, user, onClose, onAuthRequired
     fetchSeats();
   }, [match.id]);
 
-  // Hold Timer countdown
   useEffect(() => {
     if (holdTimer === null || holdTimer <= 0) return;
 
@@ -44,7 +47,7 @@ export default function SeatSelectorModal({ match, user, onClose, onAuthRequired
         if (prev <= 1) {
           clearInterval(interval);
           setHeldSeatIds([]);
-          setErrorMsg('Your 10-minute seat hold lease in Redis has expired. Please reselect your seats.');
+          setErrorMsg('Your 10-minute reservation window has expired. Please select your seats again.');
           fetchSeats();
           return null;
         }
@@ -71,7 +74,7 @@ export default function SeatSelectorModal({ match, user, onClose, onAuthRequired
     }
 
     if (selectedSeatIds.length === 0) {
-      setErrorMsg('Please select at least one available seat to hold.');
+      setErrorMsg('Please select at least one available seat.');
       return;
     }
 
@@ -81,15 +84,15 @@ export default function SeatSelectorModal({ match, user, onClose, onAuthRequired
     try {
       const res = await api.holdSeats(match.id, selectedSeatIds);
       if (!res.success) {
-        setErrorMsg(res.message || 'Seat could not be held.');
-        fetchSeats(); // Refresh seat states
+        setErrorMsg(res.message || 'Selected seats could not be reserved.');
+        fetchSeats();
         return;
       }
 
       setHeldSeatIds([...selectedSeatIds]);
-      setHoldTimer(res.data?.expires_in_seconds || 600); // 10 minutes
+      setHoldTimer(res.data?.expires_in_seconds || 600);
     } catch (err) {
-      setErrorMsg('Failed to acquire Redis seat hold lock.');
+      setErrorMsg('Unable to reserve seats at this time. Please try again.');
     } finally {
       setActionLoading(false);
     }
@@ -102,7 +105,7 @@ export default function SeatSelectorModal({ match, user, onClose, onAuthRequired
     }
 
     if (heldSeatIds.length === 0) {
-      setErrorMsg('Please hold your seats first before completing checkout.');
+      setErrorMsg('Please reserve your selected seats before completing payment.');
       return;
     }
 
@@ -115,21 +118,20 @@ export default function SeatSelectorModal({ match, user, onClose, onAuthRequired
       });
 
       if (!res.success) {
-        setErrorMsg(res.message || 'Booking confirmation failed.');
+        setErrorMsg(res.message || 'Payment confirmation failed.');
         return;
       }
 
-      // Celebratory Confetti!
       confetti({
-        particleCount: 120,
-        spread: 80,
+        particleCount: 100,
+        spread: 70,
         origin: { y: 0.6 },
       });
 
       setBookingConfirmed(res.data);
       onBookingCompleted();
     } catch (err) {
-      setErrorMsg('Network error executing ACID Saga Transaction on regional shard.');
+      setErrorMsg('A network error occurred while processing your booking.');
     } finally {
       setActionLoading(false);
     }
@@ -147,11 +149,10 @@ export default function SeatSelectorModal({ match, user, onClose, onAuthRequired
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto">
-      <div 
+      <div
         className="relative w-full max-w-4xl glass-panel-gold p-6 sm:p-8 shadow-2xl border border-white/10 my-8 overflow-hidden animate-slide-up"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Close Button */}
         <button
           onClick={onClose}
           className="absolute top-5 right-5 p-2 rounded-xl bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors"
@@ -159,23 +160,21 @@ export default function SeatSelectorModal({ match, user, onClose, onAuthRequired
           <X className="w-5 h-5" />
         </button>
 
-        {/* Modal Header */}
         <div className="mb-6">
           <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] uppercase font-mono tracking-wider text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20">
-              Venue Shard: {match.shard?.toUpperCase()}
+            <span className="text-[10px] uppercase font-bold tracking-wider text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20">
+              {match.tournament_stage || 'Official Match'}
             </span>
-            <span className="text-xs text-gray-400 font-medium">| {match.stadium_name}</span>
+            <span className="text-xs text-gray-400 font-medium">{match.stadium_name} ({formatRegion(match.shard)})</span>
           </div>
           <h2 className="text-2xl font-heading font-extrabold text-white flex items-center gap-2">
             {match.home_team} <span className="text-amber-400 font-black">vs</span> {match.away_team}
           </h2>
           <p className="text-xs text-gray-400 mt-1">
-            Select seats and acquire temporary 10-minute Redis lock before ACID relational commit.
+            Select your preferred seats from the stadium layout below. Reserved seats are held for 10 minutes during checkout.
           </p>
         </div>
 
-        {/* Success State: FIFA Match Ticket Pass */}
         {bookingConfirmed ? (
           <div className="py-8 text-center space-y-6">
             <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto border border-emerald-500/30">
@@ -183,13 +182,12 @@ export default function SeatSelectorModal({ match, user, onClose, onAuthRequired
             </div>
 
             <div>
-              <h3 className="text-2xl font-heading font-black text-white">Booking Confirmed!</h3>
+              <h3 className="text-2xl font-heading font-black text-white">Booking Confirmed</h3>
               <p className="text-xs text-gray-400 mt-1">
-                Your transaction has been written and committed into the <strong>{match.shard?.toUpperCase()}</strong> regional database shard.
+                Your official digital match pass has been issued and added to your account.
               </p>
             </div>
 
-            {/* Ticket Card Pass */}
             <div className="max-w-md mx-auto bg-gradient-to-br from-amber-500/15 via-white/[0.04] to-black/60 border border-amber-400/40 rounded-2xl p-6 text-left shadow-2xl relative overflow-hidden">
               <div className="flex items-center justify-between pb-4 border-b border-white/10">
                 <div>
@@ -213,17 +211,17 @@ export default function SeatSelectorModal({ match, user, onClose, onAuthRequired
                   </p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-gray-500">Booking ID</p>
+                  <p className="text-[10px] text-gray-500">Booking Reference</p>
                   <p className="font-mono text-[10px] text-gray-300 truncate">{bookingConfirmed.bookingId}</p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-gray-500">Total Paid</p>
+                  <p className="text-[10px] text-gray-500">Amount Paid</p>
                   <p className="font-extrabold text-white">${bookingConfirmed.totalAmount}</p>
                 </div>
               </div>
 
               <div className="pt-3 flex items-center justify-between">
-                <span className="text-[10px] text-gray-500 font-mono">TXN: {bookingConfirmed.transactionId}</span>
+                <span className="text-[10px] text-gray-500 font-mono">Ref: {bookingConfirmed.transactionId}</span>
                 <span className="text-xs font-bold text-amber-400 tracking-widest font-mono">|||| ||| |||||||</span>
               </div>
             </div>
@@ -232,26 +230,21 @@ export default function SeatSelectorModal({ match, user, onClose, onAuthRequired
               onClick={onClose}
               className="btn-primary !px-8 text-xs font-bold uppercase tracking-wider"
             >
-              Close & View Fixtures
+              Return to Fixtures
             </button>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            
-            {/* Left 2 Cols: Stadium Pitch & Seat Matrix */}
             <div className="lg:col-span-2 space-y-4">
-              
-              {/* Pitch Visual */}
               <div className="w-full h-24 rounded-2xl bg-gradient-to-b from-emerald-900/60 to-emerald-950/80 border border-emerald-500/30 flex flex-col items-center justify-center relative overflow-hidden">
                 <div className="w-20 h-20 rounded-full border border-emerald-400/20 absolute -top-10" />
                 <div className="w-full h-0.5 bg-emerald-400/25 absolute top-1/2" />
-                <span className="font-heading font-black text-[11px] tracking-widest text-emerald-300 uppercase z-10 bg-emerald-950/80 px-3 py-1 rounded-full border border-emerald-500/30">
-                  ⚽ Football Pitch
+                <span className="font-heading font-black text-[11px] tracking-widest text-emerald-300 uppercase z-10 bg-emerald-950/80 px-4 py-1 rounded-full border border-emerald-500/30">
+                  Stadium Pitch
                 </span>
               </div>
 
-              {/* Legend */}
-              <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-gray-300 py-1 bg-white/[0.02] rounded-xl border border-white/5">
+              <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-gray-300 py-2 bg-white/[0.02] rounded-xl border border-white/5">
                 <div className="flex items-center gap-1.5">
                   <span className="w-3.5 h-3.5 rounded bg-white/20 border border-white/30" />
                   <span>Available</span>
@@ -261,18 +254,17 @@ export default function SeatSelectorModal({ match, user, onClose, onAuthRequired
                   <span>Selected</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="w-3.5 h-3.5 rounded bg-amber-500/80 border border-amber-400 flex items-center justify-center text-[8px]">🔒</span>
-                  <span>Held in Redis (10m)</span>
+                  <span className="w-3.5 h-3.5 rounded bg-amber-500/60 border border-amber-400" />
+                  <span>Reserved</span>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <span className="w-3.5 h-3.5 rounded bg-rose-950/60 border border-rose-500/30 text-[8px]" />
-                  <span>Booked in Shard</span>
+                  <span className="w-3.5 h-3.5 rounded bg-rose-950/60 border border-rose-500/30" />
+                  <span>Sold</span>
                 </div>
               </div>
 
-              {/* Seat Matrix Grid */}
               {loading ? (
-                <div className="py-16 text-center text-xs text-gray-400">Loading seat availability...</div>
+                <div className="py-16 text-center text-xs text-gray-400">Loading stadium seating map...</div>
               ) : (
                 <div className="bg-white/[0.02] p-4 rounded-2xl border border-white/5 max-h-72 overflow-y-auto">
                   <div className="grid grid-cols-5 sm:grid-cols-10 gap-2">
@@ -309,15 +301,10 @@ export default function SeatSelectorModal({ match, user, onClose, onAuthRequired
               )}
             </div>
 
-            {/* Right Col: Summary, Redis Timer, Checkout */}
             <div className="glass-panel p-5 rounded-2xl border border-white/10 flex flex-col justify-between space-y-4">
               <div>
-                <h4 className="text-sm font-bold text-white mb-3 flex items-center justify-between">
-                  <span>Reservation Summary</span>
-                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                </h4>
+                <h4 className="text-sm font-bold text-white mb-3">Order Summary</h4>
 
-                {/* Error Banner */}
                 {errorMsg && (
                   <div className="mb-3 p-2.5 rounded-xl bg-rose-500/15 border border-rose-500/30 text-rose-300 text-xs flex items-start gap-2">
                     <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0 mt-0.5" />
@@ -325,12 +312,11 @@ export default function SeatSelectorModal({ match, user, onClose, onAuthRequired
                   </div>
                 )}
 
-                {/* Redis Hold Timer Box */}
                 {holdTimer !== null && (
                   <div className="p-3 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs flex items-center justify-between mb-3">
                     <div className="flex items-center gap-2">
-                      <Timer className="w-4 h-4 animate-spin-slow" />
-                      <span className="font-semibold">Redis Hold Lease</span>
+                      <Timer className="w-4 h-4" />
+                      <span className="font-semibold">Time Remaining</span>
                     </div>
                     <span className="font-mono font-black text-sm bg-black/40 px-2 py-0.5 rounded">
                       {formatTimer(holdTimer)}
@@ -338,15 +324,14 @@ export default function SeatSelectorModal({ match, user, onClose, onAuthRequired
                   </div>
                 )}
 
-                {/* Selected Seats List */}
                 <div className="space-y-2 mb-4">
                   <div className="flex justify-between text-xs text-gray-400">
                     <span>Seats Selected:</span>
                     <span className="font-bold text-white">{selectedSeatIds.length}</span>
                   </div>
                   <div className="flex justify-between text-xs text-gray-400">
-                    <span>Database Shard:</span>
-                    <span className="font-bold text-emerald-400 uppercase">{match.shard}</span>
+                    <span>Region:</span>
+                    <span className="font-bold text-emerald-400">{formatRegion(match.shard)}</span>
                   </div>
                   <div className="flex justify-between text-xs text-gray-400">
                     <span>Subtotal:</span>
@@ -358,12 +343,11 @@ export default function SeatSelectorModal({ match, user, onClose, onAuthRequired
                   </div>
                 </div>
 
-                {/* Payment Method Selector */}
                 {heldSeatIds.length > 0 && (
                   <div className="pt-2">
                     <label className="block text-xs font-semibold text-gray-300 mb-1.5 flex items-center gap-1.5">
                       <CreditCard className="w-3.5 h-3.5 text-amber-400" />
-                      Payment Handshake
+                      Payment Method
                     </label>
                     <select
                       value={paymentMethod}
@@ -379,7 +363,6 @@ export default function SeatSelectorModal({ match, user, onClose, onAuthRequired
                 )}
               </div>
 
-              {/* Action Buttons: Hold vs Confirm */}
               <div className="space-y-2 pt-2">
                 {heldSeatIds.length === 0 ? (
                   <button
@@ -388,11 +371,11 @@ export default function SeatSelectorModal({ match, user, onClose, onAuthRequired
                     className="w-full btn-primary justify-center !py-3 text-xs tracking-wider uppercase"
                   >
                     {actionLoading ? (
-                      'Acquiring Redis Lock...'
+                      'Reserving Seats...'
                     ) : (
                       <>
                         <Lock className="w-4 h-4 mr-1" />
-                        Hold Seats (Redis Mutex)
+                        Reserve Selected Seats
                       </>
                     )}
                   </button>
@@ -402,14 +385,7 @@ export default function SeatSelectorModal({ match, user, onClose, onAuthRequired
                     onClick={handleConfirmBooking}
                     className="w-full btn-emerald justify-center !py-3 text-xs tracking-wider uppercase"
                   >
-                    {actionLoading ? (
-                      'Executing Saga Commit...'
-                    ) : (
-                      <>
-                        <Sparkles className="w-4 h-4 mr-1" />
-                        Confirm & Pay (${totalPrice})
-                      </>
-                    )}
+                    {actionLoading ? 'Processing Payment...' : `Complete Purchase ($${totalPrice})`}
                   </button>
                 )}
               </div>

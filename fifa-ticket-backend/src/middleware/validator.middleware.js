@@ -1,14 +1,5 @@
-/**
- * validator.middleware.js — Request Validation Middleware
- * ─────────────────────────────────────────────────────────
- * Validates incoming authentication payloads for registration & login
- * Enforces email format, password complexity (digits, case, special chars),
- * phone format, and regional shards.
- */
-
 const { body, validationResult } = require('express-validator');
 
-// ─── Middleware to Format and Return Validation Errors ───────────
 const validate = (req, res, next) => {
   const errors = validationResult(req);
   if (!errors.isEmpty()) {
@@ -20,14 +11,13 @@ const validate = (req, res, next) => {
 
     return res.status(400).json({
       success: false,
-      message: formattedErrors[0].message, // Top priority error message
+      message: formattedErrors[0].message,
       errors: formattedErrors,
     });
   }
   next();
 };
 
-// ─── Registration Validation Rules ────────────────────────────────
 const validateRegister = [
   body('full_name')
     .trim()
@@ -38,7 +28,7 @@ const validateRegister = [
   body('email')
     .trim()
     .notEmpty().withMessage('Email address is required.')
-    .isEmail().withMessage('Please provide a valid email address (e.g. alex@example.com).')
+    .isEmail().withMessage('Please provide a valid email address.')
     .isLength({ max: 150 }).withMessage('Email cannot exceed 150 characters.')
     .normalizeEmail({ gmail_remove_dots: false }),
 
@@ -49,14 +39,14 @@ const validateRegister = [
     .matches(/[a-z]/).withMessage('Password must contain at least one lowercase letter (a-z).')
     .matches(/[A-Z]/).withMessage('Password must contain at least one uppercase letter (A-Z).')
     .matches(/[@$!%*?&#^()_\-+={}[\]:;"'<>,./~`|\\]/).withMessage(
-      'Password must contain at least one special character (e.g. !@#$%^&*).'
+      'Password must contain at least one special character.'
     ),
 
   body('phone')
     .optional({ checkFalsy: true })
     .trim()
     .matches(/^[+]?[(]?[0-9]{1,4}[)]?[-\s./0-9]{6,15}$/)
-    .withMessage('Please provide a valid international or local phone number (e.g. +923001234567).'),
+    .withMessage('Please provide a valid phone number.'),
 
   body('region')
     .optional({ checkFalsy: true })
@@ -69,12 +59,11 @@ const validateRegister = [
       return norm;
     })
     .isIn(['europe', 'asia', 'north_america', 'south_america'])
-    .withMessage('Invalid region. Valid regions are: europe, asia, north_america, south_america.'),
+    .withMessage('Invalid region selected.'),
 
   validate,
 ];
 
-// ─── Login Validation Rules ───────────────────────────────────────
 const validateLogin = [
   body('email')
     .trim()

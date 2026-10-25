@@ -2,10 +2,6 @@ const { getShardByRegion } = require('../config/shardRouter');
 const { getActiveHoldsForMatch } = require('../config/redisClient');
 
 class SeatModel {
-  /**
-   * Get all seats for a specific match, joining category and pricing.
-   * Region must be passed (obtained from Match model prior).
-   */
   static async getSeatsForMatch(matchId, region) {
     const pool = getShardByRegion(region);
     const query = `
@@ -20,12 +16,8 @@ class SeatModel {
     return result.rows;
   }
 
-  /**
-   * Get specific seats by IDs to verify they exist and get prices.
-   */
   static async getSeatsByIds(seatIds, region) {
     const pool = getShardByRegion(region);
-    // Use ANY for array parameter
     const query = `
       SELECT id, match_id, price, status 
       FROM seats 
@@ -35,9 +27,6 @@ class SeatModel {
     return result.rows;
   }
 
-  /**
-   * Get active holds for a specific match from Redis
-   */
   static async getActiveHoldsForMatch(matchId) {
     return getActiveHoldsForMatch(matchId);
   }

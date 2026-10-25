@@ -1,23 +1,13 @@
-/**
- * fakeDatabase.js — High-Performance In-Memory Sharded Distributed Database
- * ────────────────────────────────────────────────────────────────────────
- * Implements the 4 regional database shards (Europe, Asia, North America, South America)
- * with strict horizontal partitioning by stadium/venue location.
- * Provides a SQL-compatible execution interface so all models run seamlessly
- * without requiring live PostgreSQL/Docker installations.
- */
-
 const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcryptjs');
 
-// ─── 4 Regional Database Shards ──────────────────────────────────────────
 const shards = {
   europe: {
     region: 'europe',
     dbName: 'fifa_europe',
     virtualUserCount: 0,
-    users: new Map(),        // id -> user
-    usersByEmail: new Map(), // email -> id
+    users: new Map(),
+    usersByEmail: new Map(),
     stadiums: [],
     matches: [],
     categories: [],
@@ -74,7 +64,6 @@ const shards = {
   },
 };
 
-// ─── Region Name Normalizer ──────────────────────────────────────────────
 const normalizeRegion = (region) => {
   if (!region) return 'europe';
   const norm = region.toLowerCase().replace(/ /g, '_');
@@ -83,9 +72,7 @@ const normalizeRegion = (region) => {
   return norm;
 };
 
-// ─── Initialize Seed Data for Shards ─────────────────────────────────────
 const initSeedData = () => {
-  // 1. Europe Shard (fifa_europe)
   const europeStadium = {
     id: 'e1000000-0000-0000-0000-000000000001',
     name: 'Wembley Stadium',
@@ -119,7 +106,6 @@ const initSeedData = () => {
   };
   shards.europe.matches.push(matchEuro1, matchEuro2);
 
-  // 2. Asia Shard (fifa_asia)
   const asiaStadium = {
     id: 'a2000000-0000-0000-0000-000000000001',
     name: 'Lusail Iconic Stadium',
@@ -153,7 +139,6 @@ const initSeedData = () => {
   };
   shards.asia.matches.push(matchAsia1, matchAsia2);
 
-  // 3. North America Shard (fifa_north_am)
   const naStadium = {
     id: 'n3000000-0000-0000-0000-000000000001',
     name: 'MetLife Stadium',
@@ -177,10 +162,9 @@ const initSeedData = () => {
   };
   shards.north_america.matches.push(matchNA1);
 
-  // 4. South America Shard (fifa_south_am)
   const saStadium = {
     id: 's4000000-0000-0000-0000-000000000001',
-    name: 'Maracanã Stadium',
+    name: 'Maracana Stadium',
     city: 'Rio de Janeiro',
     country: 'Brazil',
     region: 'south_america',
@@ -201,17 +185,14 @@ const initSeedData = () => {
   };
   shards.south_america.matches.push(matchSA1);
 
-  // Generate categories and realistic seats for each match across each shard
   const allShardsList = Object.values(shards);
   for (const shard of allShardsList) {
     for (const match of shard.matches) {
-      const catVIP = { id: uuidv4(), stadium_id: match.stadium_id, name: 'VIP Lounge', base_price: 550.00 };
+      const catVIP = { id: uuidv4(), stadium_id: match.stadium_id, name: 'VIP Hospitality', base_price: 550.00 };
       const catPrem = { id: uuidv4(), stadium_id: match.stadium_id, name: 'Category 1 - Premium', base_price: 320.00 };
-      const catGen = { id: uuidv4(), stadium_id: match.stadium_id, name: 'Category 2 - General', base_price: 150.00 };
+      const catGen = { id: uuidv4(), stadium_id: match.stadium_id, name: 'Category 2 - Standard', base_price: 150.00 };
       shard.categories.push(catVIP, catPrem, catGen);
 
-      // Add Seats
-      // VIP: Section V1 (Seats 1-10)
       for (let s = 1; s <= 10; s++) {
         shard.seats.push({
           id: uuidv4(),
@@ -225,7 +206,6 @@ const initSeedData = () => {
           created_at: new Date().toISOString(),
         });
       }
-      // Premium: Section P1 & P2 (Seats 1-15 each)
       for (let s = 1; s <= 15; s++) {
         shard.seats.push({
           id: uuidv4(),
@@ -239,7 +219,6 @@ const initSeedData = () => {
           created_at: new Date().toISOString(),
         });
       }
-      // General: Section G1 (Seats 1-25)
       for (let s = 1; s <= 25; s++) {
         shard.seats.push({
           id: uuidv4(),
@@ -247,7 +226,7 @@ const initSeedData = () => {
           category_id: catGen.id,
           seat_number: `G1-${s}`,
           row_number: '12',
-          section: 'GENERAL',
+          section: 'STANDARD',
           price: 150.00,
           status: 'available',
           created_at: new Date().toISOString(),
@@ -256,12 +235,11 @@ const initSeedData = () => {
     }
   }
 
-  // Pre-seed an Admin account in Europe shard
   const adminId = 'a0000000-0000-0000-0000-000000000000';
   const hashedAdminPass = bcrypt.hashSync('Admin@Fifa2026!', 10);
   const adminUser = {
     id: adminId,
-    full_name: 'FIFA Chief Administrator',
+    full_name: 'FIFA Administrator',
     email: 'admin@fifa.com',
     password: hashedAdminPass,
     phone: '+41227918500',
@@ -271,22 +249,34 @@ const initSeedData = () => {
   };
   shards.europe.users.set(adminId, adminUser);
   shards.europe.usersByEmail.set('admin@fifa.com', adminId);
+
+  const fanId = 'f0000000-0000-0000-0000-000000000001';
+  const hashedFanPass = bcrypt.hashSync('Champion2026!', 10);
+  const fanUser = {
+    id: fanId,
+    full_name: 'Lionel Messi',
+    email: 'messi@fifa.com',
+    password: hashedFanPass,
+    phone: '+5491122334455',
+    role: 'user',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+  shards.south_america.users.set(fanId, fanUser);
+  shards.south_america.usersByEmail.set('messi@fifa.com', fanId);
 };
 
-// Execute seed
 initSeedData();
 
-// ─── SQL Engine Emulator for Shards ──────────────────────────────────────
 const executeSql = async (regionName, queryText, values = []) => {
   const normRegion = normalizeRegion(regionName);
   const shard = shards[normRegion];
   if (!shard) {
-    throw new Error(`FakeDatabase: Region "${regionName}" not found.`);
+    throw new Error(`Region "${regionName}" not found.`);
   }
 
   const query = queryText.trim().replace(/\s+/g, ' ');
 
-  // 1. SELECT * FROM users WHERE email = $1
   if (query.match(/SELECT \* FROM users WHERE email = \$1/i)) {
     const email = (values[0] || '').toLowerCase().trim();
     const userId = shard.usersByEmail.get(email);
@@ -297,7 +287,6 @@ const executeSql = async (regionName, queryText, values = []) => {
     return { rows: [], rowCount: 0 };
   }
 
-  // 2. INSERT INTO users ... RETURNING id, full_name, email, role, created_at
   if (query.match(/INSERT INTO users/i)) {
     const [full_name, email, password, phone, role] = values;
     const cleanEmail = email.toLowerCase().trim();
@@ -335,7 +324,6 @@ const executeSql = async (regionName, queryText, values = []) => {
     };
   }
 
-  // 3. SELECT id, full_name, email, phone, role, created_at FROM users WHERE id = $1
   if (query.match(/SELECT .+ FROM users WHERE id = \$1/i)) {
     const id = values[0];
     const user = shard.users.get(id);
@@ -346,7 +334,6 @@ const executeSql = async (regionName, queryText, values = []) => {
     return { rows: [], rowCount: 0 };
   }
 
-  // 4. SELECT * FROM stadiums
   if (query.match(/SELECT \* FROM stadiums/i)) {
     if (query.match(/WHERE id = \$1/i)) {
       const id = values[0];
@@ -356,7 +343,6 @@ const executeSql = async (regionName, queryText, values = []) => {
     return { rows: [...shard.stadiums], rowCount: shard.stadiums.length };
   }
 
-  // 5. SELECT matches with stadium join
   if (query.match(/FROM matches m/i)) {
     let rows = shard.matches.map((m) => {
       const st = shard.stadiums.find((s) => s.id === m.stadium_id) || {};
@@ -387,7 +373,6 @@ const executeSql = async (regionName, queryText, values = []) => {
     return { rows, rowCount: rows.length };
   }
 
-  // 6. SELECT seats for match
   if (query.match(/FROM seats s/i) && query.match(/WHERE s\.match_id = \$1/i)) {
     const matchId = values[0];
     const seats = shard.seats
@@ -408,10 +393,8 @@ const executeSql = async (regionName, queryText, values = []) => {
     return { rows: seats, rowCount: seats.length };
   }
 
-  // 7. SELECT seats by ID list (ANY($1::uuid[]))
   if (query.match(/FROM seats/i) && query.match(/WHERE id = ANY/i)) {
     const seatIds = Array.isArray(values[0]) ? values[0] : [values[0]];
-    const forUpdate = query.includes('FOR UPDATE');
     const availableOnly = query.includes("status = 'available'");
 
     const matching = shard.seats.filter((s) => {
@@ -423,7 +406,6 @@ const executeSql = async (regionName, queryText, values = []) => {
     return { rows: matching, rowCount: matching.length };
   }
 
-  // 8. UPDATE seats SET status = 'booked'
   if (query.match(/UPDATE seats SET status = 'booked'/i)) {
     const seatIds = Array.isArray(values[0]) ? values[0] : [values[0]];
     let count = 0;
@@ -436,7 +418,6 @@ const executeSql = async (regionName, queryText, values = []) => {
     return { rowCount: count };
   }
 
-  // 9. INSERT INTO bookings
   if (query.match(/INSERT INTO bookings/i)) {
     const [userId, matchId, totalAmount] = values;
     const booking = {
@@ -452,7 +433,6 @@ const executeSql = async (regionName, queryText, values = []) => {
     return { rows: [{ id: booking.id }], rowCount: 1 };
   }
 
-  // 10. INSERT INTO booking_seats
   if (query.match(/INSERT INTO booking_seats/i)) {
     const [bookingId, seatId] = values;
     const entry = { id: uuidv4(), booking_id: bookingId, seat_id: seatId };
@@ -460,7 +440,6 @@ const executeSql = async (regionName, queryText, values = []) => {
     return { rowCount: 1 };
   }
 
-  // 11. INSERT INTO payments
   if (query.match(/INSERT INTO payments/i)) {
     const [bookingId, amount, transactionId, paymentMethod] = values;
     const payment = {
@@ -477,7 +456,6 @@ const executeSql = async (regionName, queryText, values = []) => {
     return { rowCount: 1 };
   }
 
-  // 12. SELECT user's bookings with joined details
   if (query.match(/FROM bookings b/i) && query.match(/JOIN matches m/i)) {
     const userId = values[0];
     const userBookings = shard.bookings
@@ -507,7 +485,6 @@ const executeSql = async (regionName, queryText, values = []) => {
     return { rows: userBookings, rowCount: userBookings.length };
   }
 
-  // 13. Admin stats queries
   if (query.match(/SUM\(total_amount\)/i)) {
     const revenue = shard.bookings
       .filter((b) => b.status === 'confirmed')
@@ -521,7 +498,6 @@ const executeSql = async (regionName, queryText, values = []) => {
     return { rows: [{ seats_booked: bookedCount }], rowCount: 1 };
   }
 
-  // Generic fallback: Transactions (BEGIN, COMMIT, ROLLBACK)
   if (['BEGIN', 'COMMIT', 'ROLLBACK'].includes(query.toUpperCase())) {
     return { rows: [], rowCount: 0 };
   }
@@ -529,7 +505,6 @@ const executeSql = async (regionName, queryText, values = []) => {
   return { rows: [], rowCount: 0 };
 };
 
-// ─── Shard Stats Helper (for Millions of Users benchmark) ─────────────────
 const getShardMetrics = () => {
   const metrics = {};
   for (const [region, shard] of Object.entries(shards)) {
@@ -547,8 +522,7 @@ const getShardMetrics = () => {
   return metrics;
 };
 
-// ─── Fast Batch Insert For Generating Millions of Fake Users ─────────────
-const MAX_IN_MEMORY_RECORDS_PER_SHARD = 25000; // Keep cloud RAM safe on 512MB Render instances
+const MAX_IN_MEMORY_RECORDS_PER_SHARD = 25000;
 
 const batchInsertFakeUsers = (region, usersList) => {
   const normRegion = normalizeRegion(region);
@@ -569,7 +543,6 @@ const batchInsertFakeUsers = (region, usersList) => {
   return inserted;
 };
 
-// ─── Ultra-Fast Million-Scale Partition Streamer ──────────────────────────
 const streamPartitionedTraffic = (totalCount) => {
   const regions = ['europe', 'asia', 'north_america', 'south_america'];
   const perShard = Math.floor(totalCount / 4);

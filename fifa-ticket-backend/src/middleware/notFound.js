@@ -1,10 +1,7 @@
-/**
- * notFound.js — 404 Handler Middleware
- */
-const notFound = (req, res, next) => {
+const notFound = (req, res) => {
   res.status(404).json({
     success: false,
-    message: `🔍 Route not found: [${req.method}] ${req.originalUrl}`,
+    message: `Route not found: [${req.method}] ${req.originalUrl}`,
   });
 };
 

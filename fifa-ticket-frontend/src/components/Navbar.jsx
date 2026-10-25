@@ -1,21 +1,24 @@
 import React from 'react';
-import { Trophy, Globe2, Ticket, BarChart3, User, LogOut, ShieldCheck, Flame } from 'lucide-react';
+import { Trophy, Ticket, BarChart3, User, LogOut, Calendar } from 'lucide-react';
+
+const formatRegionName = (region) => {
+  if (!region) return 'Europe';
+  return region.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+};
 
 export default function Navbar({ activeTab, setActiveTab, user, onOpenAuth, onLogout, shardOverview }) {
   const totalUsers = shardOverview?.totalUsers || 0;
 
   return (
-    <header className="sticky top-0 z-40 w-full backdrop-blur-xl bg-[#060913]/85 border-b border-white/10 transition-all">
+    <header className="sticky top-0 z-40 w-full backdrop-blur-xl bg-[#060913]/90 border-b border-white/10 transition-all">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
-        
-        {/* Brand Logo */}
-        <div 
-          onClick={() => setActiveTab('matches')} 
+        <div
+          onClick={() => setActiveTab('matches')}
           className="flex items-center gap-3 cursor-pointer group select-none"
         >
           <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-amber-500 via-amber-400 to-emerald-400 p-0.5 shadow-lg shadow-amber-500/20 group-hover:scale-105 transition-transform">
             <div className="w-full h-full bg-[#090e1a] rounded-[10px] flex items-center justify-center">
-              <Trophy className="w-5 h-5 text-amber-400 animate-pulse" />
+              <Trophy className="w-5 h-5 text-amber-400" />
             </div>
           </div>
           <div>
@@ -23,15 +26,14 @@ export default function Navbar({ activeTab, setActiveTab, user, onOpenAuth, onLo
               <span className="font-heading font-extrabold text-lg tracking-wider text-white">
                 FIFA <span className="text-amber-400">2026</span>
               </span>
-              <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-                Distributed
+              <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                Official
               </span>
             </div>
-            <p className="text-[11px] text-gray-400 tracking-wide font-medium">World Cup Ticketing Architecture</p>
+            <p className="text-[11px] text-gray-400 tracking-wide font-medium">World Cup Ticketing Portal</p>
           </div>
         </div>
 
-        {/* Navigation Tabs */}
         <nav className="hidden md:flex items-center gap-1 bg-white/[0.03] p-1.5 rounded-2xl border border-white/5">
           <button
             onClick={() => setActiveTab('matches')}
@@ -41,8 +43,8 @@ export default function Navbar({ activeTab, setActiveTab, user, onOpenAuth, onLo
                 : 'text-gray-300 hover:text-white hover:bg-white/5'
             }`}
           >
-            <Flame className="w-4 h-4" />
-            Fixtures & Matches
+            <Calendar className="w-4 h-4" />
+            Fixtures & Tickets
           </button>
 
           <button
@@ -54,9 +56,9 @@ export default function Navbar({ activeTab, setActiveTab, user, onOpenAuth, onLo
             }`}
           >
             <BarChart3 className="w-4 h-4" />
-            Distributed Monitor
+            Operations & Traffic
             {totalUsers > 0 && (
-              <span className="text-[10px] bg-white/20 text-white px-1.5 py-0.2 rounded-full">
+              <span className="text-[10px] bg-black/25 text-current px-2 py-0.5 rounded-full">
                 {totalUsers.toLocaleString()}
               </span>
             )}
@@ -72,18 +74,15 @@ export default function Navbar({ activeTab, setActiveTab, user, onOpenAuth, onLo
               }`}
             >
               <Ticket className="w-4 h-4" />
-              My Tickets
+              My Passes
             </button>
           )}
         </nav>
 
-        {/* Right Section: User Status or Sign In */}
         <div className="flex items-center gap-3">
-          {/* Shard Indicator Pill */}
           <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.04] border border-white/5 text-xs text-gray-300">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-            <Globe2 className="w-3.5 h-3.5 text-emerald-400" />
-            <span className="font-medium">4 Regional Shards Active</span>
+            <span className="w-2 h-2 rounded-full bg-emerald-400" />
+            <span className="font-medium">All Regional Servers Online</span>
           </div>
 
           {user ? (
@@ -96,12 +95,13 @@ export default function Navbar({ activeTab, setActiveTab, user, onOpenAuth, onLo
                   <p className="text-xs font-bold text-white leading-tight flex items-center gap-1.5">
                     {user.full_name}
                     {user.role === 'admin' && (
-                      <span className="text-[9px] bg-rose-500/20 text-rose-400 px-1 py-0.2 rounded font-bold uppercase">Admin</span>
+                      <span className="text-[9px] bg-rose-500/20 text-rose-400 px-1.5 py-0.5 rounded font-bold uppercase">
+                        Admin
+                      </span>
                     )}
                   </p>
-                  <p className="text-[10px] text-gray-400 capitalize flex items-center gap-1">
-                    <ShieldCheck className="w-3 h-3 text-emerald-400 inline" />
-                    Shard: {user.home_region || 'Europe'}
+                  <p className="text-[10px] text-gray-400">
+                    Region: {formatRegionName(user.home_region)}
                   </p>
                 </div>
               </div>

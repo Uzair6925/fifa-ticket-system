@@ -1,13 +1,9 @@
 const { getShardByRegion, getAllShards } = require('../config/shardRouter');
 
 class MatchModel {
-  /**
-   * Get all matches across all regional shards
-   * Supports filtering by status (e.g., 'upcoming')
-   */
   static async getAll(status = null) {
     const shards = getAllShards();
-    
+
     const promises = shards.map(async ({ region, pool }) => {
       try {
         let query = `
@@ -15,19 +11,18 @@ class MatchModel {
           FROM matches m
           JOIN stadiums s ON m.stadium_id = s.id
         `;
-        let values = [];
+        const values = [];
 
         if (status) {
           query += ' WHERE m.status = $1';
           values.push(status);
         }
-        
+
         query += ' ORDER BY m.match_date ASC';
 
         const result = await pool.query(query, values);
-        return result.rows.map(row => ({ ...row, shard: region }));
+        return result.rows.map((row) => ({ ...row, shard: region }));
       } catch (err) {
-        console.error(`Error querying matches in ${region} shard:`, err.message);
         return [];
       }
     });
@@ -36,12 +31,8 @@ class MatchModel {
     return results.flat().sort((a, b) => new Date(a.match_date) - new Date(b.match_date));
   }
 
-  /**
-   * Search matches by team or stadium name using Full-Text Search
-   */
   static async search(keyword) {
     const shards = getAllShards();
-    // Prefix search approach
     const searchPattern = `%${keyword}%`;
 
     const promises = shards.map(async ({ region, pool }) => {
@@ -56,7 +47,7 @@ class MatchModel {
           ORDER BY m.match_date ASC
         `;
         const result = await pool.query(query, [searchPattern]);
-        return result.rows.map(row => ({ ...row, shard: region }));
+        return result.rows.map((row) => ({ ...row, shard: region }));
       } catch (err) {
         return [];
       }
@@ -66,9 +57,6 @@ class MatchModel {
     return results.flat().sort((a, b) => new Date(a.match_date) - new Date(b.match_date));
   }
 
-  /**
-   * Get match details by ID (looks across shards)
-   */
   static async getById(id, region = null) {
     const query = `
       SELECT m.*, s.name AS stadium_name, s.city AS stadium_city, s.capacity
@@ -92,7 +80,7 @@ class MatchModel {
       });
 
       const results = await Promise.all(promises);
-      return results.find(res => res !== null) || null;
+      return results.find((res) => res !== null) || null;
     }
   }
 }

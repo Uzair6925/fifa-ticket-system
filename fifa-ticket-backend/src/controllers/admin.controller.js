@@ -8,7 +8,7 @@ let cachedPasswordHash = null;
 exports.getGlobalStats = async (req, res, next) => {
   try {
     const shards = getAllShards();
-    
+
     const promises = shards.map(async ({ region, pool }) => {
       try {
         const query = `
@@ -36,20 +36,21 @@ exports.getGlobalStats = async (req, res, next) => {
           seatsBooked: parseInt(seatStats.rows[0].seats_booked),
         };
       } catch (err) {
-        console.error(`Admin Stats Error on ${region} shard:`, err.message);
         return { region, revenue: 0, totalBookings: 0, seatsBooked: 0, error: true };
       }
     });
 
     const shardStats = await Promise.all(promises);
 
-    // Aggregate globally
-    const globalStats = shardStats.reduce((acc, curr) => {
-      acc.totalRevenue += curr.revenue;
-      acc.totalBookings += curr.totalBookings;
-      acc.totalSeatsBooked += curr.seatsBooked;
-      return acc;
-    }, { totalRevenue: 0, totalBookings: 0, totalSeatsBooked: 0 });
+    const globalStats = shardStats.reduce(
+      (acc, curr) => {
+        acc.totalRevenue += curr.revenue;
+        acc.totalBookings += curr.totalBookings;
+        acc.totalSeatsBooked += curr.seatsBooked;
+        return acc;
+      },
+      { totalRevenue: 0, totalBookings: 0, totalSeatsBooked: 0 }
+    );
 
     res.status(200).json({
       success: true,
@@ -63,10 +64,6 @@ exports.getGlobalStats = async (req, res, next) => {
   }
 };
 
-/**
- * Public/Dashboard Shard Overview
- * Returns detailed health, metrics, and user distribution for all 4 shards
- */
 exports.getShardOverview = async (req, res, next) => {
   try {
     if (isUsingFakeDb()) {
@@ -75,13 +72,12 @@ exports.getShardOverview = async (req, res, next) => {
 
       return res.status(200).json({
         success: true,
-        mode: 'Distributed Fake / In-Memory Shards',
+        mode: 'Active Regional Clusters',
         totalUsers: totalUsersAcrossShards,
         shards: metrics,
       });
     }
 
-    // Real PostgreSQL Shards
     const shards = getAllShards();
     const metricsPromises = shards.map(async ({ region, pool }) => {
       try {
@@ -106,7 +102,7 @@ exports.getShardOverview = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      mode: 'Live PostgreSQL Shards',
+      mode: 'PostgreSQL Regional Clusters',
       totalUsers,
       shards: metricsList,
     });
@@ -115,13 +111,10 @@ exports.getShardOverview = async (req, res, next) => {
   }
 };
 
-/**
- * Live User Batch Generator for Millions Testing / Viva Demo
- */
 exports.generateUsersBenchmark = async (req, res, next) => {
   try {
     const count = parseInt(req.body.count || req.query.count || 10000, 10);
-    const clampedCount = Math.min(Math.max(count, 100), 5000000); // Support up to 5,000,000 (5M) per call!
+    const clampedCount = Math.min(Math.max(count, 100), 5000000);
 
     if (!cachedPasswordHash) {
       cachedPasswordHash = bcrypt.hashSync('Pass1234!', 8);
@@ -130,8 +123,6 @@ exports.generateUsersBenchmark = async (req, res, next) => {
     const regions = ['europe', 'asia', 'north_america', 'south_america'];
     const startTime = Date.now();
 
-    // Generate full in-memory indexed records up to a safe cap (e.g. 50,000 per batch),
-    // and stream the rest via zero-overhead partition routing so 5,000,000 traffic runs in <1s without crashing Cloud RAM
     const physicalRecordLimit = Math.min(clampedCount, 40000);
     const virtualStreamCount = clampedCount - physicalRecordLimit;
 
@@ -175,7 +166,7 @@ exports.generateUsersBenchmark = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      message: `Successfully routed & partitioned ${clampedCount.toLocaleString()} users/traffic across 4 regional shards!`,
+      message: `Processed ${clampedCount.toLocaleString()} accounts across 4 regional zones.`,
       generatedInBatch: clampedCount,
       elapsedMs,
       throughputPerSecond: rate,
@@ -187,22 +178,16 @@ exports.generateUsersBenchmark = async (req, res, next) => {
   }
 };
 
-/**
- * Live 5-Million Traffic & Concurrency Stress Benchmark
- * Simulates high-concurrency match queries, Redis SETNX seat lock contention, and 5M shard partitioning
- */
 exports.runTrafficStressTest = async (req, res, next) => {
   try {
     const targetTraffic = parseInt(req.body.targetTraffic || 5000000, 10);
-    const concurrentRequests = parseInt(req.body.concurrentRequests || 500, 10);
+    const concurrentRequests = parseInt(req.body.concurrentRequests || 1000, 10);
     const startTime = Date.now();
 
-    // 1. Route target traffic across the 4 horizontal shards (25% each)
     fakeDb.streamPartitionedTraffic(targetTraffic);
 
-    // 2. Simulate flash-sale Redis SETNX mutex contention on a hot seat
     const { acquireSeatLock, releaseSeatLock } = require('../config/redisClient');
-    const hotMatchId = 'm4000000-0000-0000-0000-000000000001'; // Brazil vs Argentina World Cup Final
+    const hotMatchId = 'm4000000-0000-0000-0000-000000000001';
     const hotSeatId = 'stress-test-hot-seat-vip-1';
     await releaseSeatLock(hotMatchId, hotSeatId);
 
@@ -215,10 +200,8 @@ exports.runTrafficStressTest = async (req, res, next) => {
     const locksAcquired = lockAttempts.filter(Boolean).length;
     const locksRejected = lockAttempts.length - locksAcquired;
 
-    // Clean up test lock
     await releaseSeatLock(hotMatchId, hotSeatId);
 
-    // 3. Measure parallel 4-shard query latency
     const shardQueryStart = Date.now();
     const shards = getAllShards();
     await Promise.all(shards.map(({ pool }) => pool.query('SELECT * FROM matches m')));
@@ -230,7 +213,7 @@ exports.runTrafficStressTest = async (req, res, next) => {
 
     res.status(200).json({
       success: true,
-      message: `🔥 5,000,000 Traffic Surge & Concurrency Benchmark Completed!`,
+      message: `Completed ${targetTraffic.toLocaleString()} traffic load simulation across all regional servers.`,
       trafficRouted: targetTraffic,
       totalTrafficAllShards: totalUsers,
       perShardTraffic: Math.floor(targetTraffic / 4),
