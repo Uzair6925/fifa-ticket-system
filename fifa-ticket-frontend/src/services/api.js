@@ -14,6 +14,16 @@ const getAuthHeaders = () => {
   return headers;
 };
 
+const handleResponse = async (res) => {
+  const data = await res.json();
+  if (res.status === 401 && typeof window !== 'undefined') {
+    localStorage.removeItem('fifa_token');
+    localStorage.removeItem('fifa_user');
+    window.dispatchEvent(new Event('fifa-auth-expired'));
+  }
+  return data;
+};
+
 export const api = {
   register: async (payload) => {
     const res = await fetch(`${API_BASE_URL}/auth/register`, {
@@ -37,7 +47,7 @@ export const api = {
     const res = await fetch(`${API_BASE_URL}/auth/me`, {
       headers: getAuthHeaders(),
     });
-    return res.json();
+    return handleResponse(res);
   },
 
   getMatches: async () => {
@@ -61,7 +71,7 @@ export const api = {
       headers: getAuthHeaders(),
       body: JSON.stringify({ matchId, seatIds }),
     });
-    return res.json();
+    return handleResponse(res);
   },
 
   releaseSeats: async (matchId, seatIds) => {
@@ -70,7 +80,7 @@ export const api = {
       headers: getAuthHeaders(),
       body: JSON.stringify({ matchId, seatIds }),
     });
-    return res.json();
+    return handleResponse(res);
   },
 
   confirmBooking: async (matchId, seatIds, paymentDetails) => {
@@ -79,14 +89,14 @@ export const api = {
       headers: getAuthHeaders(),
       body: JSON.stringify({ matchId, seatIds, paymentDetails }),
     });
-    return res.json();
+    return handleResponse(res);
   },
 
   getMyBookings: async () => {
     const res = await fetch(`${API_BASE_URL}/bookings/my-bookings`, {
       headers: getAuthHeaders(),
     });
-    return res.json();
+    return handleResponse(res);
   },
 
   getShardOverview: async () => {

@@ -22,11 +22,28 @@ export default function App() {
     if (savedUser && token) {
       try {
         setUser(JSON.parse(savedUser));
+        api.getProfile().then((res) => {
+          if (res && res.success && res.user) {
+            setUser(res.user);
+            localStorage.setItem('fifa_user', JSON.stringify(res.user));
+          } else {
+            localStorage.removeItem('fifa_user');
+            localStorage.removeItem('fifa_token');
+            setUser(null);
+          }
+        }).catch(() => {});
       } catch (e) {
         localStorage.removeItem('fifa_user');
         localStorage.removeItem('fifa_token');
       }
     }
+
+    const onAuthExpired = () => {
+      setUser(null);
+      setAuthModalOpen(true);
+    };
+    window.addEventListener('fifa-auth-expired', onAuthExpired);
+    return () => window.removeEventListener('fifa-auth-expired', onAuthExpired);
   }, []);
 
   const fetchData = async () => {

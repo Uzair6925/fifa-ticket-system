@@ -96,6 +96,10 @@ const acquireSeatLock = async (matchId, seatId, userId) => {
     const now = Date.now();
     const existing = inMemoryLocks.get(lockKey);
     if (existing && existing.expiresAt > now) {
+      if (existing.userId === userId) {
+        existing.expiresAt = now + ttl * 1000;
+        return true;
+      }
       return false;
     }
     inMemoryLocks.set(lockKey, { userId, expiresAt: now + ttl * 1000 });
@@ -107,16 +111,30 @@ const acquireSeatLock = async (matchId, seatId, userId) => {
   return result === 'OK';
 };
 
-const releaseSeatLock = async (matchId, seatId) => {
+const releaseSeatLock = async (matchId, seatId, userId = null) => {
   const lockKey = `seat_lock:${matchId}:${seatId}`;
   if (isMockRedis) {
+    const existing = inMemoryLocks.get(lockKey);
+    if (!existing) return true;
+    if (userId && existing.userId !== userId) {
+      return false;
+    }
     inMemoryLocks.delete(lockKey);
-    return;
+    return true;
+  }
+
+  const client = getRedisClient();
+  if (userId) {
+    const owner = await client.get(lockKey);
+    if (owner && owner !== userId) {
+      return false;
+    }
   }
   await deleteCache(lockKey);
+  return true;
 };
 
-const isSeatLocked = async (matchId, seatId) => {
+const isSeatLocked = async (matchId, seatId, userId = null) => {
   const lockKey = `seat_lock:${matchId}:${seatId}`;
   if (isMockRedis) {
     const existing = inMemoryLocks.get(lockKey);
@@ -125,11 +143,16 @@ const isSeatLocked = async (matchId, seatId) => {
       inMemoryLocks.delete(lockKey);
       return false;
     }
+    if (userId && existing.userId !== userId) {
+      return false;
+    }
     return true;
   }
   const client = getRedisClient();
   const val = await client.get(lockKey);
-  return val !== null;
+  if (val === null) return false;
+  if (userId && val !== userId) return false;
+  return true;
 };
 
 const getActiveHoldsForMatch = async (matchId) => {

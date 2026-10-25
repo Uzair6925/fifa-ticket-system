@@ -55,9 +55,28 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
     setErrorMsg('');
     setSuccessMsg('');
+
+    const cleanEmail = formData.email.trim().toLowerCase();
+    const emailParts = cleanEmail.split('@');
+    if (emailParts.length !== 2) {
+      setErrorMsg('Please enter a valid email address.');
+      return;
+    }
+
+    const blockedDomains = ['xyz.com', 'xyzl.com', 'abc.com', 'test.com', 'example.com', 'fake.com', 'tempmail.com', 'mailinator.com'];
+    if (blockedDomains.includes(emailParts[1])) {
+      setErrorMsg(`"${emailParts[1]}" is not an accepted email domain. Please use a real email provider (e.g., gmail.com, outlook.com).`);
+      return;
+    }
+
+    if (mode === 'register' && score < 5) {
+      setErrorMsg('Please ensure your password meets all 5 security requirements before registering.');
+      return;
+    }
+
+    setLoading(true);
 
     try {
       if (mode === 'register') {

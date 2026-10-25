@@ -44,6 +44,24 @@ exports.holdSeats = async (req, res, next) => {
       return res.status(400).json({ success: false, message: 'Invalid request data.' });
     }
 
+    const matchRecord = await MatchModel.getById(matchId);
+    if (!matchRecord) {
+      return res.status(404).json({ success: false, message: 'Match not found.' });
+    }
+
+    const dbSeats = await SeatModel.getSeatsByIds(seatIds, matchRecord.region);
+    if (dbSeats.length !== seatIds.length) {
+      return res.status(400).json({ success: false, message: 'One or more selected seats do not exist.' });
+    }
+
+    const alreadyBooked = dbSeats.some((s) => s.status === 'booked');
+    if (alreadyBooked) {
+      return res.status(409).json({
+        success: false,
+        message: 'One or more selected seats have already been sold.',
+      });
+    }
+
     const lockPromises = seatIds.map((seatId) => acquireSeatLock(matchId, seatId, userId));
     const lockResults = await Promise.all(lockPromises);
 
@@ -52,7 +70,7 @@ exports.holdSeats = async (req, res, next) => {
       const rollbackPromises = [];
       for (let i = 0; i < seatIds.length; i++) {
         if (lockResults[i] === true) {
-          rollbackPromises.push(releaseSeatLock(matchId, seatIds[i]));
+          rollbackPromises.push(releaseSeatLock(matchId, seatIds[i], userId));
         }
       }
       await Promise.all(rollbackPromises);
@@ -76,12 +94,13 @@ exports.holdSeats = async (req, res, next) => {
 exports.releaseSeats = async (req, res, next) => {
   try {
     const { matchId, seatIds } = req.body;
+    const userId = req.user.id;
 
     if (!matchId || !seatIds || !Array.isArray(seatIds)) {
       return res.status(400).json({ success: false, message: 'Invalid request data.' });
     }
 
-    const releasePromises = seatIds.map((seatId) => releaseSeatLock(matchId, seatId));
+    const releasePromises = seatIds.map((seatId) => releaseSeatLock(matchId, seatId, userId));
     await Promise.all(releasePromises);
 
     res.status(200).json({

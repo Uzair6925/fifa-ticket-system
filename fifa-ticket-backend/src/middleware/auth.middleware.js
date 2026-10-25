@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 
 const JWT_SECRET = process.env.JWT_SECRET || 'fifa_super_secret_jwt_key_2026';
 
-const protect = (req, res, next) => {
+const protect = async (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -16,10 +16,21 @@ const protect = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
+    const UserModel = require('../models/user.model');
+    const userRegion = decoded.region || 'europe';
+    const existingUser = await UserModel.findById(decoded.id, userRegion);
+
+    if (!existingUser) {
+      return res.status(401).json({
+        success: false,
+        message: 'Your session is no longer valid. Please sign in again.',
+      });
+    }
+
     req.user = {
       id: decoded.id,
-      region: decoded.region || 'europe',
-      role: decoded.role || 'user',
+      region: userRegion,
+      role: existingUser.role || decoded.role || 'user',
     };
     next();
   } catch (err) {

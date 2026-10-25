@@ -20,11 +20,11 @@ exports.createBooking = async (req, res, next) => {
     const { region } = matchRecord;
 
     for (const seatId of seatIds) {
-      const locked = await isSeatLocked(matchId, seatId);
-      if (!locked) {
-        return res.status(400).json({
+      const lockedByCurrentUser = await isSeatLocked(matchId, seatId, userId);
+      if (!lockedByCurrentUser) {
+        return res.status(403).json({
           success: false,
-          message: 'Your seat reservation window has expired. Please select your seats again.',
+          message: 'Your seat reservation has expired or belongs to another account. Please select your seats again.',
         });
       }
     }
@@ -50,7 +50,7 @@ exports.createBooking = async (req, res, next) => {
       region
     );
 
-    const releasePromises = seatIds.map((seatId) => releaseSeatLock(matchId, seatId));
+    const releasePromises = seatIds.map((seatId) => releaseSeatLock(matchId, seatId, userId));
     await Promise.all(releasePromises);
 
     res.status(201).json({
