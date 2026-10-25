@@ -62,6 +62,67 @@ class BookingModel {
     }
   }
 
+  static async cancelTransaction(bookingId, userId) {
+    const shards = getAllShards();
+    let targetRegion = null;
+    let foundBooking = null;
+
+    for (const { region, pool } of shards) {
+      const checkRes = await pool.query(
+        'SELECT * FROM bookings WHERE id = $1 AND user_id = $2',
+        [bookingId, userId]
+      );
+      if (checkRes.rows.length > 0) {
+        targetRegion = region;
+        foundBooking = checkRes.rows[0];
+        break;
+      }
+    }
+
+    if (!foundBooking || !targetRegion) {
+      return null;
+    }
+
+    if (foundBooking.status === 'cancelled') {
+      throw new Error('This booking has already been cancelled.');
+    }
+
+    const pool = getShardByRegion(targetRegion);
+    const client = await pool.connect();
+
+    try {
+      await client.query('BEGIN');
+
+      await client.query(
+        "UPDATE bookings SET status = 'cancelled', updated_at = NOW() WHERE id = $1",
+        [bookingId]
+      );
+
+      await client.query(
+        `UPDATE seats SET status = 'available'
+         WHERE id IN (SELECT seat_id FROM booking_seats WHERE booking_id = $1)`,
+        [bookingId]
+      );
+
+      await client.query(
+        "UPDATE payments SET payment_status = 'refunded' WHERE booking_id = $1",
+        [bookingId]
+      );
+
+      await client.query('COMMIT');
+      return {
+        bookingId,
+        region: targetRegion,
+        refundedAmount: foundBooking.total_amount,
+      };
+    } catch (error) {
+      await client.query('ROLLBACK');
+      throw error;
+    } finally {
+      client.release();
+    }
+  }
+
   static async getUserBookings(userId) {
     const shards = getAllShards();
 

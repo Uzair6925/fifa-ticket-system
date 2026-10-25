@@ -7,5 +7,7 @@ const { validateRegister, validateLogin } = require('../middleware/validator.mid
 router.post('/register', validateRegister, authController.register);
 router.post('/login', validateLogin, authController.login);
 router.get('/me', protect, authController.getProfile);
+router.put('/profile', protect, authController.updateProfile);
+router.put('/password', protect, authController.changePassword);
 
 module.exports = router;

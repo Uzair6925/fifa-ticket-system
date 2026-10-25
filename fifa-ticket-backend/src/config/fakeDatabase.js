@@ -243,6 +243,33 @@ const initSeedData = () => {
     email: 'admin@fifa.com',
     password: hashedAdminPass,
     phone: '+41227918500',
+    nationality: 'Switzerland',
+    passport_number: 'CH-99201844',
+    billing_address: {
+      street: 'FIFA-Strasse 20',
+      city: 'Zurich',
+      postal_code: '8044',
+      country: 'Switzerland',
+    },
+    payment_methods: [
+      {
+        id: 'pm-1',
+        type: 'Visa Corporate',
+        cardholder: 'FIFA Administrator',
+        last4: '4242',
+        expiry: '08/28',
+        bank_name: 'UBS Switzerland AG',
+        iban: 'CH93 0000 **** **** 8901',
+        is_default: true,
+      },
+    ],
+    preferences: {
+      email_notifications: true,
+      sms_alerts: true,
+      two_factor_auth: true,
+      currency: 'USD',
+      seat_preference: 'VIP Hospitality',
+    },
     role: 'admin',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
@@ -258,6 +285,33 @@ const initSeedData = () => {
     email: 'messi@fifa.com',
     password: hashedFanPass,
     phone: '+5491122334455',
+    nationality: 'Argentina',
+    passport_number: 'AR-10202610',
+    billing_address: {
+      street: 'Av. del Libertador 4200',
+      city: 'Buenos Aires',
+      postal_code: 'C1425',
+      country: 'Argentina',
+    },
+    payment_methods: [
+      {
+        id: 'pm-2',
+        type: 'MasterCard World Elite',
+        cardholder: 'Lionel Messi',
+        last4: '1010',
+        expiry: '12/27',
+        bank_name: 'Banco Santander Rio',
+        iban: 'AR29 0072 **** **** 1010',
+        is_default: true,
+      },
+    ],
+    preferences: {
+      email_notifications: true,
+      sms_alerts: true,
+      two_factor_auth: false,
+      currency: 'USD',
+      seat_preference: 'VIP Hospitality',
+    },
     role: 'user',
     created_at: new Date().toISOString(),
     updated_at: new Date().toISOString(),
@@ -328,10 +382,38 @@ const executeSql = async (regionName, queryText, values = []) => {
     const id = values[0];
     const user = shard.users.get(id);
     if (user) {
+      if (query.match(/SELECT password FROM users/i)) {
+        return { rows: [{ password: user.password }], rowCount: 1 };
+      }
       const { password, ...safeUser } = user;
       return { rows: [safeUser], rowCount: 1 };
     }
     return { rows: [], rowCount: 0 };
+  }
+
+  if (query.match(/UPDATE users SET/i)) {
+    const id = values[0];
+    const user = shard.users.get(id);
+    if (!user) return { rows: [], rowCount: 0 };
+
+    if (query.match(/SET password = \$2/i)) {
+      user.password = values[1];
+      user.updated_at = new Date().toISOString();
+      return { rowCount: 1 };
+    }
+
+    const [, full_name, phone, nationality, passport_number, billing_address, payment_methods, preferences] = values;
+    if (full_name !== undefined) user.full_name = full_name;
+    if (phone !== undefined) user.phone = phone;
+    if (nationality !== undefined) user.nationality = nationality;
+    if (passport_number !== undefined) user.passport_number = passport_number;
+    if (billing_address !== undefined) user.billing_address = billing_address;
+    if (payment_methods !== undefined) user.payment_methods = payment_methods;
+    if (preferences !== undefined) user.preferences = preferences;
+    user.updated_at = new Date().toISOString();
+
+    const { password, ...safeUser } = user;
+    return { rows: [safeUser], rowCount: 1 };
   }
 
   if (query.match(/SELECT \* FROM stadiums/i)) {
@@ -483,6 +565,37 @@ const executeSql = async (regionName, queryText, values = []) => {
       });
 
     return { rows: userBookings, rowCount: userBookings.length };
+  }
+
+  if (query.match(/SELECT \* FROM bookings WHERE id = \$1 AND user_id = \$2/i)) {
+    const [bookingId, userId] = values;
+    const booking = shard.bookings.find((b) => b.id === bookingId && b.user_id === userId);
+    return { rows: booking ? [booking] : [], rowCount: booking ? 1 : 0 };
+  }
+
+  if (query.match(/UPDATE bookings SET status = 'cancelled'/i)) {
+    const [bookingId] = values;
+    const booking = shard.bookings.find((b) => b.id === bookingId);
+    if (!booking) return { rowCount: 0 };
+    booking.status = 'cancelled';
+    booking.updated_at = new Date().toISOString();
+
+    const linkedSeatIds = shard.bookingSeats
+      .filter((bs) => bs.booking_id === bookingId)
+      .map((bs) => bs.seat_id);
+
+    for (const seat of shard.seats) {
+      if (linkedSeatIds.includes(seat.id)) {
+        seat.status = 'available';
+      }
+    }
+
+    const payment = shard.payments.find((p) => p.booking_id === bookingId);
+    if (payment) {
+      payment.payment_status = 'refunded';
+    }
+
+    return { rows: [booking], rowCount: 1 };
   }
 
   if (query.match(/SUM\(total_amount\)/i)) {

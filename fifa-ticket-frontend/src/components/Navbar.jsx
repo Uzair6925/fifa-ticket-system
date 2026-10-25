@@ -1,5 +1,5 @@
 import React from 'react';
-import { Trophy, Ticket, BarChart3, User, LogOut, Calendar } from 'lucide-react';
+import { Trophy, Ticket, BarChart3, User, LogOut, Calendar, Settings } from 'lucide-react';
 
 const formatRegionName = (region) => {
   if (!region) return 'Europe';
@@ -65,17 +65,31 @@ export default function Navbar({ activeTab, setActiveTab, user, onOpenAuth, onLo
           </button>
 
           {user && (
-            <button
-              onClick={() => setActiveTab('bookings')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                activeTab === 'bookings'
-                  ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/25'
-                  : 'text-gray-300 hover:text-white hover:bg-white/5'
-              }`}
-            >
-              <Ticket className="w-4 h-4" />
-              My Passes
-            </button>
+            <>
+              <button
+                onClick={() => setActiveTab('bookings')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                  activeTab === 'bookings'
+                    ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/25'
+                    : 'text-gray-300 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <Ticket className="w-4 h-4" />
+                My Passes
+              </button>
+
+              <button
+                onClick={() => setActiveTab('account')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                  activeTab === 'account'
+                    ? 'bg-amber-500 text-black shadow-lg shadow-amber-500/25'
+                    : 'text-gray-300 hover:text-white hover:bg-white/5'
+                }`}
+              >
+                <Settings className="w-4 h-4" />
+                Account & Banking
+              </button>
+            </>
           )}
         </nav>
 
@@ -86,8 +100,16 @@ export default function Navbar({ activeTab, setActiveTab, user, onOpenAuth, onLo
           </div>
 
           {user ? (
-            <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2.5 bg-white/[0.05] border border-white/10 px-3.5 py-1.5 rounded-xl">
+            <div className="flex items-center gap-2.5">
+              <button
+                onClick={() => setActiveTab('account')}
+                title="Open Account & Banking Settings"
+                className={`flex items-center gap-2.5 border px-3.5 py-1.5 rounded-xl transition-all cursor-pointer ${
+                  activeTab === 'account'
+                    ? 'bg-amber-500/15 border-amber-400/50'
+                    : 'bg-white/[0.05] hover:bg-white/[0.09] border-white/10'
+                }`}
+              >
                 <div className="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs uppercase">
                   {user.full_name?.charAt(0) || 'U'}
                 </div>
@@ -104,7 +126,7 @@ export default function Navbar({ activeTab, setActiveTab, user, onOpenAuth, onLo
                     Region: {formatRegionName(user.home_region)}
                   </p>
                 </div>
-              </div>
+              </button>
 
               <button
                 onClick={onLogout}

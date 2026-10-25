@@ -91,16 +91,14 @@ exports.login = async (req, res, next) => {
     const token = generateToken(user.id, region, user.role);
     logger.info(`User logged in [${region}]: ${email}`);
 
+    const { password: _, ...safeUser } = user;
+
     res.status(200).json({
       success: true,
       message: 'Signed in successfully.',
       token,
       user: {
-        id: user.id,
-        full_name: user.full_name,
-        email: user.email,
-        phone: user.phone,
-        role: user.role,
+        ...safeUser,
         home_region: region,
       },
     });
@@ -127,6 +125,104 @@ exports.getProfile = async (req, res, next) => {
         ...user,
         home_region: region,
       },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.updateProfile = async (req, res, next) => {
+  try {
+    const { id, region } = req.user;
+    const {
+      full_name,
+      phone,
+      nationality,
+      passport_number,
+      billing_address,
+      payment_methods,
+      preferences,
+    } = req.body;
+
+    if (full_name !== undefined && String(full_name).trim().length < 3) {
+      return res.status(400).json({
+        success: false,
+        message: 'Full name must be at least 3 characters long.',
+      });
+    }
+
+    const updatedUser = await UserModel.updateProfile(id, region, {
+      full_name: full_name ? String(full_name).trim() : undefined,
+      phone: phone !== undefined ? String(phone).trim() : undefined,
+      nationality,
+      passport_number,
+      billing_address,
+      payment_methods,
+      preferences,
+    });
+
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        message: 'User profile not found.',
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Account settings updated successfully.',
+      user: {
+        ...updatedUser,
+        home_region: region,
+      },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.changePassword = async (req, res, next) => {
+  try {
+    const { id, region } = req.user;
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Both current password and new password are required.',
+      });
+    }
+
+    if (newPassword.length < 8) {
+      return res.status(400).json({
+        success: false,
+        message: 'New password must be at least 8 characters long.',
+      });
+    }
+
+    const userWithPass = await UserModel.findByIdWithPassword(id, region);
+    if (!userWithPass) {
+      return res.status(404).json({
+        success: false,
+        message: 'Account not found.',
+      });
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, userWithPass.password);
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: 'Current password is incorrect.',
+      });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedNewPassword = await bcrypt.hash(newPassword, salt);
+    await UserModel.updatePassword(id, region, hashedNewPassword);
+
+    res.status(200).json({
+      success: true,
+      message: 'Password updated successfully.',
     });
   } catch (error) {
     next(error);

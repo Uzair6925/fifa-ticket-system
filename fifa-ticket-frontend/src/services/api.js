@@ -50,6 +50,24 @@ export const api = {
     return handleResponse(res);
   },
 
+  updateProfile: async (payload) => {
+    const res = await fetch(`${API_BASE_URL}/auth/profile`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload),
+    });
+    return handleResponse(res);
+  },
+
+  changePassword: async (payload) => {
+    const res = await fetch(`${API_BASE_URL}/auth/password`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(payload),
+    });
+    return handleResponse(res);
+  },
+
   getMatches: async () => {
     const res = await fetch(`${API_BASE_URL}/matches`);
     return res.json();
@@ -94,6 +112,14 @@ export const api = {
 
   getMyBookings: async () => {
     const res = await fetch(`${API_BASE_URL}/bookings/my-bookings`, {
+      headers: getAuthHeaders(),
+    });
+    return handleResponse(res);
+  },
+
+  cancelBooking: async (bookingId) => {
+    const res = await fetch(`${API_BASE_URL}/bookings/cancel/${bookingId}`, {
+      method: 'POST',
       headers: getAuthHeaders(),
     });
     return handleResponse(res);

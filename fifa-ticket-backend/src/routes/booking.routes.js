@@ -5,5 +5,6 @@ const { protect } = require('../middleware/auth.middleware');
 
 router.post('/create', protect, bookingController.createBooking);
 router.get('/my-bookings', protect, bookingController.getUserBookings);
+router.post('/cancel/:bookingId', protect, bookingController.cancelBooking);
 
 module.exports = router;

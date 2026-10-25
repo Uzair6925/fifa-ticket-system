@@ -70,6 +70,36 @@ exports.createBooking = async (req, res, next) => {
   }
 };
 
+exports.cancelBooking = async (req, res, next) => {
+  try {
+    const { bookingId } = req.params;
+    const userId = req.user.id;
+
+    if (!bookingId) {
+      return res.status(400).json({ success: false, message: 'Booking ID is required.' });
+    }
+
+    const result = await BookingModel.cancelTransaction(bookingId, userId);
+    if (!result) {
+      return res.status(404).json({
+        success: false,
+        message: 'Booking not found or does not belong to your account.',
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Booking cancelled. A refund of $${result.refundedAmount} has been initiated to your payment method.`,
+      data: result,
+    });
+  } catch (error) {
+    if (error.message.includes('already been cancelled')) {
+      return res.status(400).json({ success: false, message: error.message });
+    }
+    next(error);
+  }
+};
+
 exports.getUserBookings = async (req, res, next) => {
   try {
     const userId = req.user.id;

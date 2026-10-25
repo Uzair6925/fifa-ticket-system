@@ -1,29 +1,54 @@
 import React, { useState, useEffect } from 'react';
-import { Ticket, Calendar, MapPin } from 'lucide-react';
+import { Ticket, Calendar, MapPin, XCircle, CheckCircle2, AlertCircle } from 'lucide-react';
 import { api } from '../services/api';
 
 export default function MyBookings({ user, onGoToMatches }) {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [errorMsg, setErrorMsg] = useState('');
+  const [cancellingId, setCancellingId] = useState(null);
+  const [confirmCancelId, setConfirmCancelId] = useState(null);
+  const [statusBanner, setStatusBanner] = useState(null);
+
+  const fetchBookings = async () => {
+    try {
+      setLoading(true);
+      const res = await api.getMyBookings();
+      if (res.success) {
+        setBookings(res.data || []);
+      }
+    } catch (err) {
+      setStatusBanner({ type: 'error', text: 'Failed to load tickets.' });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchBookings = async () => {
-      try {
-        setLoading(true);
-        const res = await api.getMyBookings();
-        if (res.success) {
-          setBookings(res.data);
-        }
-      } catch (err) {
-        setErrorMsg('Failed to load tickets.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchBookings();
   }, []);
+
+  const handleCancelBooking = async (bookingId) => {
+    setCancellingId(bookingId);
+    setStatusBanner(null);
+    try {
+      const res = await api.cancelBooking(bookingId);
+      if (!res.success) {
+        setStatusBanner({ type: 'error', text: res.message || 'Unable to cancel booking.' });
+        return;
+      }
+
+      setStatusBanner({
+        type: 'success',
+        text: res.message || 'Booking cancelled and refund initiated.',
+      });
+      setConfirmCancelId(null);
+      await fetchBookings();
+    } catch (err) {
+      setStatusBanner({ type: 'error', text: 'Network error while cancelling booking.' });
+    } finally {
+      setCancellingId(null);
+    }
+  };
 
   if (loading) {
     return (
@@ -54,28 +79,42 @@ export default function MyBookings({ user, onGoToMatches }) {
     );
   }
 
+  const activeBookingsCount = bookings.filter((b) => b.booking_status === 'confirmed').length;
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between pb-4 border-b border-white/10">
         <div>
           <h2 className="text-2xl font-heading font-black text-white">My Match Passes</h2>
           <p className="text-xs text-gray-400 mt-0.5">
-            Confirmed tournament reservations associated with your account.
+            Manage your confirmed tournament passes or request an instant cancellation and refund.
           </p>
         </div>
         <span className="text-xs font-bold text-amber-400 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20">
-          {bookings.length} {bookings.length === 1 ? 'Pass' : 'Passes'} Confirmed
+          {activeBookingsCount} Active {activeBookingsCount === 1 ? 'Pass' : 'Passes'}
         </span>
       </div>
 
-      {errorMsg && (
-        <div className="p-4 rounded-xl bg-rose-500/15 border border-rose-500/30 text-xs text-rose-300">
-          {errorMsg}
+      {statusBanner && (
+        <div
+          className={`p-4 rounded-2xl border text-xs flex items-center gap-2.5 animate-slide-up ${
+            statusBanner.type === 'success'
+              ? 'bg-emerald-500/15 border-emerald-500/30 text-emerald-300'
+              : 'bg-rose-500/15 border-rose-500/30 text-rose-300'
+          }`}
+        >
+          {statusBanner.type === 'success' ? (
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+          ) : (
+            <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0" />
+          )}
+          <span>{statusBanner.text}</span>
         </div>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {bookings.map((booking) => {
+          const isCancelled = booking.booking_status === 'cancelled';
           const matchDate = new Date(booking.match_date).toLocaleDateString('en-US', {
             month: 'short',
             day: 'numeric',
@@ -87,14 +126,24 @@ export default function MyBookings({ user, onGoToMatches }) {
           return (
             <div
               key={booking.booking_id}
-              className="bg-gradient-to-br from-[#0e172a] via-[#101b33] to-[#0a101f] border border-amber-400/30 rounded-3xl p-6 shadow-xl relative overflow-hidden group hover:border-amber-400/60 transition-all"
+              className={`bg-gradient-to-br from-[#0e172a] via-[#101b33] to-[#0a101f] border rounded-3xl p-6 shadow-xl relative overflow-hidden transition-all ${
+                isCancelled
+                  ? 'border-white/10 opacity-75'
+                  : 'border-amber-400/30 hover:border-amber-400/60'
+              }`}
             >
               <div className="flex items-center justify-between mb-4">
                 <span className="text-[10px] uppercase font-bold tracking-widest text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20">
                   Official FIFA Pass
                 </span>
-                <span className="text-[10px] bg-emerald-500/20 text-emerald-400 font-bold px-2.5 py-0.5 rounded-full">
-                  {booking.booking_status?.toUpperCase()}
+                <span
+                  className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full ${
+                    isCancelled
+                      ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
+                      : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                  }`}
+                >
+                  {isCancelled ? 'CANCELLED & REFUNDED' : booking.booking_status?.toUpperCase()}
                 </span>
               </div>
 
@@ -117,23 +166,60 @@ export default function MyBookings({ user, onGoToMatches }) {
                 {booking.seats?.map((seat, idx) => (
                   <span
                     key={idx}
-                    className="text-[11px] font-bold bg-white/10 text-white px-2.5 py-1 rounded-lg border border-white/10"
+                    className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border ${
+                      isCancelled
+                        ? 'bg-white/5 text-gray-500 border-white/5 line-through'
+                        : 'bg-white/10 text-white border-white/10'
+                    }`}
                   >
                     Seat {seat.seat_number} (${seat.price})
                   </span>
                 ))}
               </div>
 
-              <div className="pt-3 border-t border-white/10 flex items-center justify-between">
+              <div className="pt-3 border-t border-white/10 flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-[10px] text-gray-500">Total Paid</p>
-                  <p className="text-sm font-extrabold text-amber-400">${booking.total_amount}</p>
+                  <p className="text-[10px] text-gray-500">
+                    {isCancelled ? 'Refunded Amount' : 'Total Paid'}
+                  </p>
+                  <p className={`text-sm font-extrabold ${isCancelled ? 'text-gray-400' : 'text-amber-400'}`}>
+                    ${booking.total_amount}
+                  </p>
+                  <span className="text-[9px] text-gray-500 font-mono block mt-0.5">
+                    Ref: {booking.booking_id?.slice(0, 12)}
+                  </span>
                 </div>
 
-                <div className="text-right">
-                  <span className="text-[9px] text-gray-500 font-mono block">Ref: {booking.booking_id?.slice(0, 12)}</span>
-                  <span className="font-mono text-xs text-gray-400 tracking-widest">|||| |||||| ||</span>
-                </div>
+                {!isCancelled && (
+                  <div>
+                    {confirmCancelId === booking.booking_id ? (
+                      <div className="flex items-center gap-2">
+                        <button
+                          disabled={cancellingId === booking.booking_id}
+                          onClick={() => handleCancelBooking(booking.booking_id)}
+                          className="px-3 py-1.5 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs transition-colors"
+                        >
+                          {cancellingId === booking.booking_id ? 'Cancelling...' : 'Confirm Cancel'}
+                        </button>
+                        <button
+                          disabled={cancellingId === booking.booking_id}
+                          onClick={() => setConfirmCancelId(null)}
+                          className="px-2.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-gray-300 text-xs transition-colors"
+                        >
+                          Keep
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setConfirmCancelId(booking.booking_id)}
+                        className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/25 text-xs font-bold transition-colors"
+                      >
+                        <XCircle className="w-3.5 h-3.5" />
+                        Cancel Ticket & Refund
+                      </button>
+                    )}
+                  </div>
+                )}
               </div>
             </div>
           );

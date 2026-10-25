@@ -11,12 +11,17 @@ const formatRegion = (r) => {
 export default function SeatSelectorModal({ match, user, onClose, onAuthRequired, onBookingCompleted }) {
   if (!match) return null;
 
+  const savedMethods =
+    user?.payment_methods && user.payment_methods.length > 0
+      ? user.payment_methods.map((pm) => `${pm.type} •••• ${pm.last4} (${pm.bank_name})`)
+      : ['Visa Credit Card', 'MasterCard', 'Direct Bank Wire (IBAN)', 'Apple Pay'];
+
   const [seats, setSeats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedSeatIds, setSelectedSeatIds] = useState([]);
   const [heldSeatIds, setHeldSeatIds] = useState([]);
   const [holdTimer, setHoldTimer] = useState(null);
-  const [paymentMethod, setPaymentMethod] = useState('Visa Credit Card');
+  const [paymentMethod, setPaymentMethod] = useState(savedMethods[0]);
   const [bookingConfirmed, setBookingConfirmed] = useState(null);
   const [actionLoading, setActionLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -354,10 +359,11 @@ export default function SeatSelectorModal({ match, user, onClose, onAuthRequired
                       onChange={(e) => setPaymentMethod(e.target.value)}
                       className="w-full py-2 px-3 bg-white/5 border border-white/10 rounded-xl text-xs text-white focus:outline-none focus:border-amber-400"
                     >
-                      <option value="Visa Credit Card" className="bg-[#0f172a]">Visa Credit Card</option>
-                      <option value="MasterCard" className="bg-[#0f172a]">MasterCard</option>
-                      <option value="Apple Pay" className="bg-[#0f172a]">Apple Pay</option>
-                      <option value="Google Pay" className="bg-[#0f172a]">Google Pay</option>
+                      {savedMethods.map((methodLabel, idx) => (
+                        <option key={idx} value={methodLabel} className="bg-[#0f172a]">
+                          {methodLabel}
+                        </option>
+                      ))}
                     </select>
                   </div>
                 )}

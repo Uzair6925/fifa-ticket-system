@@ -5,6 +5,7 @@ import SeatSelectorModal from './components/SeatSelectorModal';
 import AuthModal from './components/AuthModal';
 import MyBookings from './components/MyBookings';
 import ShardMonitor from './components/ShardMonitor';
+import AccountSettings from './components/AccountSettings';
 import { api } from './services/api';
 
 export default function App() {
@@ -22,16 +23,19 @@ export default function App() {
     if (savedUser && token) {
       try {
         setUser(JSON.parse(savedUser));
-        api.getProfile().then((res) => {
-          if (res && res.success && res.user) {
-            setUser(res.user);
-            localStorage.setItem('fifa_user', JSON.stringify(res.user));
-          } else {
-            localStorage.removeItem('fifa_user');
-            localStorage.removeItem('fifa_token');
-            setUser(null);
-          }
-        }).catch(() => {});
+        api
+          .getProfile()
+          .then((res) => {
+            if (res && res.success && res.user) {
+              setUser(res.user);
+              localStorage.setItem('fifa_user', JSON.stringify(res.user));
+            } else {
+              localStorage.removeItem('fifa_user');
+              localStorage.removeItem('fifa_token');
+              setUser(null);
+            }
+          })
+          .catch(() => {});
       } catch (e) {
         localStorage.removeItem('fifa_user');
         localStorage.removeItem('fifa_token');
@@ -75,7 +79,7 @@ export default function App() {
     localStorage.removeItem('fifa_token');
     localStorage.removeItem('fifa_user');
     setUser(null);
-    if (activeTab === 'bookings') {
+    if (activeTab === 'bookings' || activeTab === 'account') {
       setActiveTab('matches');
     }
   };
@@ -111,6 +115,13 @@ export default function App() {
           <MyBookings
             user={user}
             onGoToMatches={() => setActiveTab('matches')}
+          />
+        )}
+
+        {activeTab === 'account' && user && (
+          <AccountSettings
+            user={user}
+            onUserUpdated={(updatedUser) => setUser(updatedUser)}
           />
         )}
       </main>
