@@ -1,0 +1,20 @@
+# render.yaml — Render Cloud Blueprint for FIFA World Cup 2026 Distributed Ticketing System
+services:
+  - type: web
+    name: fifa-ticket-distributed-system
+    runtime: node
+    plan: free
+    buildCommand: npm run build
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: USE_FAKE_DB
+        value: "true"
+      - key: JWT_SECRET
+        value: fifa_world_cup_2026_distributed_secret_key
+      - key: RATE_LIMIT_MAX_REQUESTS
+        value: "50000"
+      - key: SEAT_HOLD_TTL
+        value: "600"
