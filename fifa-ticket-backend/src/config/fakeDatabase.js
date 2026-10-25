@@ -1,5 +1,9 @@
+const fs = require('fs');
+const path = require('path');
 const { v4: uuidv4 } = require('uuid');
 const bcrypt = require('bcryptjs');
+
+const SNAPSHOT_FILE = path.join(__dirname, '../../database/persistent_shards.json');
 
 const shards = {
   europe: {
@@ -320,7 +324,56 @@ const initSeedData = () => {
   shards.south_america.usersByEmail.set('messi@fifa.com', fanId);
 };
 
+const saveSnapshot = () => {
+  try {
+    const dir = path.dirname(SNAPSHOT_FILE);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    const serialized = {};
+    for (const [region, shard] of Object.entries(shards)) {
+      const realUsers = [];
+      for (const u of shard.users.values()) {
+        if (!u.email?.endsWith('@fifafan.org')) {
+          realUsers.push(u);
+        }
+      }
+      serialized[region] = {
+        users: realUsers,
+        bookings: shard.bookings,
+        bookingSeats: shard.bookingSeats,
+        payments: shard.payments,
+        seats: shard.seats,
+      };
+    }
+    fs.writeFileSync(SNAPSHOT_FILE, JSON.stringify(serialized, null, 2), 'utf8');
+  } catch (err) {}
+};
+
+const loadSnapshot = () => {
+  try {
+    if (!fs.existsSync(SNAPSHOT_FILE)) return;
+    const raw = fs.readFileSync(SNAPSHOT_FILE, 'utf8');
+    const data = JSON.parse(raw);
+    for (const [region, saved] of Object.entries(data)) {
+      const shard = shards[region];
+      if (!shard) continue;
+      if (Array.isArray(saved.users)) {
+        for (const u of saved.users) {
+          shard.users.set(u.id, u);
+          shard.usersByEmail.set(u.email.toLowerCase(), u.id);
+        }
+      }
+      if (Array.isArray(saved.bookings)) shard.bookings = saved.bookings;
+      if (Array.isArray(saved.bookingSeats)) shard.bookingSeats = saved.bookingSeats;
+      if (Array.isArray(saved.payments)) shard.payments = saved.payments;
+      if (Array.isArray(saved.seats) && saved.seats.length > 0) shard.seats = saved.seats;
+    }
+  } catch (err) {}
+};
+
 initSeedData();
+loadSnapshot();
 
 const executeSql = async (regionName, queryText, values = []) => {
   const normRegion = normalizeRegion(regionName);
@@ -364,6 +417,7 @@ const executeSql = async (regionName, queryText, values = []) => {
 
     shard.users.set(newUser.id, newUser);
     shard.usersByEmail.set(cleanEmail, newUser.id);
+    saveSnapshot();
 
     return {
       rows: [{
@@ -399,6 +453,7 @@ const executeSql = async (regionName, queryText, values = []) => {
     if (query.match(/SET password = \$2/i)) {
       user.password = values[1];
       user.updated_at = new Date().toISOString();
+      saveSnapshot();
       return { rowCount: 1 };
     }
 
@@ -411,6 +466,7 @@ const executeSql = async (regionName, queryText, values = []) => {
     if (payment_methods !== undefined) user.payment_methods = payment_methods;
     if (preferences !== undefined) user.preferences = preferences;
     user.updated_at = new Date().toISOString();
+    saveSnapshot();
 
     const { password, ...safeUser } = user;
     return { rows: [safeUser], rowCount: 1 };
@@ -535,6 +591,7 @@ const executeSql = async (regionName, queryText, values = []) => {
       created_at: new Date().toISOString(),
     };
     shard.payments.push(payment);
+    saveSnapshot();
     return { rowCount: 1 };
   }
 
@@ -595,6 +652,7 @@ const executeSql = async (regionName, queryText, values = []) => {
       payment.payment_status = 'refunded';
     }
 
+    saveSnapshot();
     return { rows: [booking], rowCount: 1 };
   }
 

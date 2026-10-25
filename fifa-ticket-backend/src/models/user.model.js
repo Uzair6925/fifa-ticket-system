@@ -35,22 +35,50 @@ class UserModel {
   }
 
   static async findById(id, region) {
-    const pool = getShardByRegion(region);
-    const result = await pool.query(
-      'SELECT id, full_name, email, phone, role, created_at FROM users WHERE id = $1',
-      [id]
-    );
-    return result.rows[0];
+    if (region) {
+      try {
+        const pool = getShardByRegion(region);
+        const result = await pool.query(
+          'SELECT id, full_name, email, phone, role, created_at FROM users WHERE id = $1',
+          [id]
+        );
+        if (result.rows[0]) return result.rows[0];
+      } catch (err) {}
+    }
+
+    const shards = getAllShards();
+    for (const { pool } of shards) {
+      try {
+        const result = await pool.query(
+          'SELECT id, full_name, email, phone, role, created_at FROM users WHERE id = $1',
+          [id]
+        );
+        if (result.rows[0]) return result.rows[0];
+      } catch (err) {}
+    }
+    return null;
   }
 
   static async findByIdWithPassword(id, region) {
-    const pool = getShardByRegion(region);
-    const result = await pool.query('SELECT password FROM users WHERE id = $1', [id]);
-    return result.rows[0];
+    if (region) {
+      try {
+        const pool = getShardByRegion(region);
+        const result = await pool.query('SELECT password FROM users WHERE id = $1', [id]);
+        if (result.rows[0]) return result.rows[0];
+      } catch (err) {}
+    }
+
+    const shards = getAllShards();
+    for (const { pool } of shards) {
+      try {
+        const result = await pool.query('SELECT password FROM users WHERE id = $1', [id]);
+        if (result.rows[0]) return result.rows[0];
+      } catch (err) {}
+    }
+    return null;
   }
 
   static async updateProfile(id, region, updates) {
-    const pool = getShardByRegion(region);
     const {
       full_name,
       phone,
@@ -77,14 +105,41 @@ class UserModel {
       preferences,
     ];
 
-    const result = await pool.query(query, values);
-    return result.rows[0];
+    if (region) {
+      try {
+        const pool = getShardByRegion(region);
+        const result = await pool.query(query, values);
+        if (result.rows[0]) return result.rows[0];
+      } catch (err) {}
+    }
+
+    const shards = getAllShards();
+    for (const { pool } of shards) {
+      try {
+        const result = await pool.query(query, values);
+        if (result.rows[0]) return result.rows[0];
+      } catch (err) {}
+    }
+    return null;
   }
 
   static async updatePassword(id, region, newHashedPassword) {
-    const pool = getShardByRegion(region);
-    await pool.query('UPDATE users SET password = $2 WHERE id = $1', [id, newHashedPassword]);
-    return true;
+    if (region) {
+      try {
+        const pool = getShardByRegion(region);
+        const res = await pool.query('UPDATE users SET password = $2 WHERE id = $1', [id, newHashedPassword]);
+        if (res.rowCount > 0) return true;
+      } catch (err) {}
+    }
+
+    const shards = getAllShards();
+    for (const { pool } of shards) {
+      try {
+        const res = await pool.query('UPDATE users SET password = $2 WHERE id = $1', [id, newHashedPassword]);
+        if (res.rowCount > 0) return true;
+      } catch (err) {}
+    }
+    return false;
   }
 }
 

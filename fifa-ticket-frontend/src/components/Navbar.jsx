@@ -34,7 +34,7 @@ export default function Navbar({ activeTab, setActiveTab, user, onOpenAuth, onLo
           </div>
         </div>
 
-        <nav className="hidden md:flex items-center gap-1 bg-white/[0.03] p-1.5 rounded-2xl border border-white/5">
+        <nav className="flex items-center gap-1 bg-white/[0.03] p-1.5 rounded-2xl border border-white/5 overflow-x-auto scrollbar-none">
           <button
             onClick={() => setActiveTab('matches')}
             className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
@@ -113,7 +113,7 @@ export default function Navbar({ activeTab, setActiveTab, user, onOpenAuth, onLo
                 <div className="w-7 h-7 rounded-lg bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs uppercase">
                   {user.full_name?.charAt(0) || 'U'}
                 </div>
-                <div className="text-left hidden sm:block">
+                <div className="text-left block">
                   <p className="text-xs font-bold text-white leading-tight flex items-center gap-1.5">
                     {user.full_name}
                     {user.role === 'admin' && (
@@ -122,8 +122,8 @@ export default function Navbar({ activeTab, setActiveTab, user, onOpenAuth, onLo
                       </span>
                     )}
                   </p>
-                  <p className="text-[10px] text-gray-400">
-                    Region: {formatRegionName(user.home_region)}
+                  <p className="text-[10px] text-amber-400 font-medium">
+                    Profile & Settings
                   </p>
                 </div>
               </button>

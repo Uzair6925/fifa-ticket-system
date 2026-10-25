@@ -1,22 +1,44 @@
-import React, { useState } from 'react';
-import { X, Lock, Mail, User, Eye, EyeOff, CheckCircle2, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { X, Lock, Mail, User, Phone, Eye, EyeOff, CheckCircle2, AlertCircle } from 'lucide-react';
 import { api } from '../services/api';
 
-export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
-  if (!isOpen) return null;
+const INITIAL_FORM_STATE = {
+  full_name: '',
+  email: '',
+  password: '',
+  phone: '',
+  region: 'europe',
+};
 
+export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
   const [mode, setMode] = useState('login');
-  const [formData, setFormData] = useState({
-    full_name: '',
-    email: '',
-    password: '',
-    phone: '',
-    region: 'europe',
-  });
+  const [demoRoleHint, setDemoRoleHint] = useState('fan');
+  const [formData, setFormData] = useState(INITIAL_FORM_STATE);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      setFormData(INITIAL_FORM_STATE);
+      setErrorMsg('');
+      setSuccessMsg('');
+      setShowPassword(false);
+      setMode('login');
+      setDemoRoleHint('fan');
+    }
+  }, [isOpen]);
+
+  if (!isOpen) return null;
+
+  const switchMode = (newMode) => {
+    setMode(newMode);
+    setFormData(INITIAL_FORM_STATE);
+    setErrorMsg('');
+    setSuccessMsg('');
+    setShowPassword(false);
+  };
 
   const password = formData.password;
   const checks = {
@@ -36,21 +58,24 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
     setErrorMsg('');
   };
 
-  const handleQuickDemo = (type) => {
-    if (type === 'admin') {
-      setFormData((prev) => ({
-        ...prev,
-        email: 'admin@fifa.com',
-        password: 'Admin@Fifa2026!',
-      }));
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        email: 'messi@fifa.com',
-        password: 'Champion2026!',
-      }));
-    }
+  const handleSelectDemoHint = (type) => {
+    setDemoRoleHint(type);
+    setFormData(INITIAL_FORM_STATE);
     setErrorMsg('');
+  };
+
+  const getEmailPlaceholder = () => {
+    if (mode === 'register') {
+      return 'e.g. alex.morgan@gmail.com';
+    }
+    return demoRoleHint === 'admin' ? 'Hint: admin@fifa.com' : 'Hint: messi@fifa.com';
+  };
+
+  const getPasswordPlaceholder = () => {
+    if (mode === 'register') {
+      return 'e.g. WorldCup@2026';
+    }
+    return demoRoleHint === 'admin' ? 'Hint: Admin@Fifa2026!' : 'Hint: Champion2026!';
   };
 
   const handleSubmit = async (e) => {
@@ -89,11 +114,12 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
 
         localStorage.setItem('fifa_token', res.token);
         localStorage.setItem('fifa_user', JSON.stringify(res.user));
+        setFormData(INITIAL_FORM_STATE);
         setSuccessMsg('Account created successfully.');
         setTimeout(() => {
           onAuthSuccess(res.user);
           onClose();
-        }, 700);
+        }, 600);
       } else {
         const res = await api.login({
           email: formData.email,
@@ -108,11 +134,12 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
 
         localStorage.setItem('fifa_token', res.token);
         localStorage.setItem('fifa_user', JSON.stringify(res.user));
+        setFormData(INITIAL_FORM_STATE);
         setSuccessMsg('Signed in successfully.');
         setTimeout(() => {
           onAuthSuccess(res.user);
           onClose();
-        }, 700);
+        }, 600);
       }
     } catch (err) {
       setErrorMsg('Unable to connect to the authentication service. Please try again.');
@@ -147,14 +174,14 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
           <p className="text-xs text-gray-400 mt-0.5">
             {mode === 'login'
               ? 'Access your match passes and manage seat reservations'
-              : 'Register to book official tournament tickets in your region'}
+              : 'Register with a fresh profile to book official tournament tickets'}
           </p>
         </div>
 
         <div className="flex bg-white/5 p-1 rounded-xl mb-4 border border-white/5">
           <button
             type="button"
-            onClick={() => { setMode('login'); setErrorMsg(''); }}
+            onClick={() => switchMode('login')}
             className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
               mode === 'login'
                 ? 'bg-amber-500 text-black shadow-md shadow-amber-500/20'
@@ -165,7 +192,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
           </button>
           <button
             type="button"
-            onClick={() => { setMode('register'); setErrorMsg(''); }}
+            onClick={() => switchMode('register')}
             className={`flex-1 py-2 text-xs font-bold rounded-lg transition-all ${
               mode === 'register'
                 ? 'bg-amber-500 text-black shadow-md shadow-amber-500/20'
@@ -189,7 +216,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-3.5">
+        <form onSubmit={handleSubmit} autoComplete="off" className="space-y-3.5">
           {mode === 'register' && (
             <div>
               <label className="block text-xs font-semibold text-gray-300 mb-1">Full Name</label>
@@ -198,11 +225,12 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
                 <input
                   type="text"
                   name="full_name"
+                  autoComplete="off"
                   value={formData.full_name}
                   onChange={handleChange}
                   required
-                  placeholder="Enter your full name"
-                  className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs text-white placeholder-gray-500 focus:outline-none focus:border-amber-400 transition-colors"
+                  placeholder="e.g. Alex Morgan"
+                  className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs text-white placeholder-gray-500 focus:placeholder-transparent focus:outline-none focus:border-amber-400 transition-colors"
                 />
               </div>
             </div>
@@ -215,14 +243,33 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
               <input
                 type="email"
                 name="email"
+                autoComplete="new-email"
                 value={formData.email}
                 onChange={handleChange}
                 required
-                placeholder="name@example.com"
-                className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs text-white placeholder-gray-500 focus:outline-none focus:border-amber-400 transition-colors"
+                placeholder={getEmailPlaceholder()}
+                className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs text-white placeholder-gray-500 focus:placeholder-transparent focus:outline-none focus:border-amber-400 transition-colors"
               />
             </div>
           </div>
+
+          {mode === 'register' && (
+            <div>
+              <label className="block text-xs font-semibold text-gray-300 mb-1">Phone Number (Optional)</label>
+              <div className="relative">
+                <Phone className="absolute left-3.5 top-2.5 w-4 h-4 text-gray-500" />
+                <input
+                  type="text"
+                  name="phone"
+                  autoComplete="off"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  placeholder="e.g. +1 555 234 5678"
+                  className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs text-white placeholder-gray-500 focus:placeholder-transparent focus:outline-none focus:border-amber-400 transition-colors"
+                />
+              </div>
+            </div>
+          )}
 
           <div>
             <div className="flex items-center justify-between mb-1">
@@ -238,11 +285,12 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
               <input
                 type={showPassword ? 'text' : 'password'}
                 name="password"
+                autoComplete="new-password"
                 value={formData.password}
                 onChange={handleChange}
                 required
-                placeholder="Enter your password"
-                className="w-full pl-10 pr-10 py-2 bg-white/5 border border-white/10 rounded-xl text-xs text-white placeholder-gray-500 focus:outline-none focus:border-amber-400 transition-colors"
+                placeholder={getPasswordPlaceholder()}
+                className="w-full pl-10 pr-10 py-2 bg-white/5 border border-white/10 rounded-xl text-xs text-white placeholder-gray-500 focus:placeholder-transparent focus:outline-none focus:border-amber-400 transition-colors"
               />
               <button
                 type="button"
@@ -344,21 +392,29 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
 
         {mode === 'login' && (
           <div className="mt-5 pt-4 border-t border-white/10 text-center">
-            <p className="text-[11px] text-gray-400 mb-2 font-medium">Demo Accounts:</p>
+            <p className="text-[11px] text-gray-400 mb-2 font-medium">View Credential Hints:</p>
             <div className="flex items-center justify-center gap-2">
               <button
                 type="button"
-                onClick={() => handleQuickDemo('admin')}
-                className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] text-amber-400 font-medium transition-colors"
+                onClick={() => handleSelectDemoHint('admin')}
+                className={`px-3 py-1.5 rounded-lg border text-[11px] font-medium transition-colors ${
+                  demoRoleHint === 'admin'
+                    ? 'bg-amber-500/20 border-amber-400/50 text-amber-300'
+                    : 'bg-white/5 hover:bg-white/10 border-white/10 text-gray-400'
+                }`}
               >
-                Administrator
+                Administrator Hint
               </button>
               <button
                 type="button"
-                onClick={() => handleQuickDemo('fan')}
-                className="px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 text-[11px] text-emerald-400 font-medium transition-colors"
+                onClick={() => handleSelectDemoHint('fan')}
+                className={`px-3 py-1.5 rounded-lg border text-[11px] font-medium transition-colors ${
+                  demoRoleHint === 'fan'
+                    ? 'bg-emerald-500/20 border-emerald-400/50 text-emerald-300'
+                    : 'bg-white/5 hover:bg-white/10 border-white/10 text-gray-400'
+                }`}
               >
-                Standard Member
+                Standard Member Hint
               </button>
             </div>
           </div>
