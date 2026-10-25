@@ -139,7 +139,7 @@ export const api = {
     return res.json();
   },
 
-  runTrafficStressTest: async (targetTraffic = 5000000, concurrentRequests = 1000) => {
+  runTrafficStressTest: async (targetTraffic = 50000000, concurrentRequests = 1000) => {
     const res = await fetch(`${API_BASE_URL}/admin/traffic-test`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

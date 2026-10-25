@@ -114,7 +114,7 @@ exports.getShardOverview = async (req, res, next) => {
 exports.generateUsersBenchmark = async (req, res, next) => {
   try {
     const count = parseInt(req.body.count || req.query.count || 10000, 10);
-    const clampedCount = Math.min(Math.max(count, 100), 5000000);
+    const clampedCount = Math.min(Math.max(count, 100), 50000000);
 
     if (!cachedPasswordHash) {
       cachedPasswordHash = bcrypt.hashSync('Pass1234!', 8);
@@ -180,7 +180,7 @@ exports.generateUsersBenchmark = async (req, res, next) => {
 
 exports.runTrafficStressTest = async (req, res, next) => {
   try {
-    const targetTraffic = parseInt(req.body.targetTraffic || 5000000, 10);
+    const targetTraffic = parseInt(req.body.targetTraffic || 50000000, 10);
     const concurrentRequests = parseInt(req.body.concurrentRequests || 1000, 10);
     const startTime = Date.now();
 

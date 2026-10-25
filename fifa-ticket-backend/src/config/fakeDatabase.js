@@ -77,7 +77,8 @@ const normalizeRegion = (region) => {
 };
 
 const initSeedData = () => {
-  const europeStadium = {
+  // 1. Europe Shard (5 Matches)
+  const europeStadium1 = {
     id: 'e1000000-0000-0000-0000-000000000001',
     name: 'Wembley Stadium',
     city: 'London',
@@ -86,13 +87,22 @@ const initSeedData = () => {
     capacity: 90000,
     created_at: new Date().toISOString(),
   };
-  shards.europe.stadiums.push(europeStadium);
+  const europeStadium2 = {
+    id: 'e1000000-0000-0000-0000-000000000002',
+    name: 'Allianz Arena',
+    city: 'Munich',
+    country: 'Germany',
+    region: 'europe',
+    capacity: 75000,
+    created_at: new Date().toISOString(),
+  };
+  shards.europe.stadiums.push(europeStadium1, europeStadium2);
 
   const matchEuro1 = {
     id: 'm1000000-0000-0000-0000-000000000001',
     home_team: 'England',
     away_team: 'France',
-    stadium_id: europeStadium.id,
+    stadium_id: europeStadium1.id,
     match_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
     tournament_stage: 'Quarter-Final',
     status: 'upcoming',
@@ -102,15 +112,46 @@ const initSeedData = () => {
     id: 'm1000000-0000-0000-0000-000000000002',
     home_team: 'Germany',
     away_team: 'Spain',
-    stadium_id: europeStadium.id,
+    stadium_id: europeStadium2.id,
     match_date: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
     tournament_stage: 'Semi-Final',
     status: 'upcoming',
     created_at: new Date().toISOString(),
   };
-  shards.europe.matches.push(matchEuro1, matchEuro2);
+  const matchEuro3 = {
+    id: 'm1000000-0000-0000-0000-000000000003',
+    home_team: 'Portugal',
+    away_team: 'Netherlands',
+    stadium_id: europeStadium1.id,
+    match_date: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+    tournament_stage: 'Round of 16',
+    status: 'upcoming',
+    created_at: new Date().toISOString(),
+  };
+  const matchEuro4 = {
+    id: 'm1000000-0000-0000-0000-000000000004',
+    home_team: 'Belgium',
+    away_team: 'Croatia',
+    stadium_id: europeStadium2.id,
+    match_date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+    tournament_stage: 'Group Stage',
+    status: 'upcoming',
+    created_at: new Date().toISOString(),
+  };
+  const matchEuro5 = {
+    id: 'm1000000-0000-0000-0000-000000000005',
+    home_team: 'Italy',
+    away_team: 'Denmark',
+    stadium_id: europeStadium1.id,
+    match_date: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString(),
+    tournament_stage: 'Group Stage',
+    status: 'upcoming',
+    created_at: new Date().toISOString(),
+  };
+  shards.europe.matches.push(matchEuro1, matchEuro2, matchEuro3, matchEuro4, matchEuro5);
 
-  const asiaStadium = {
+  // 2. Asia Shard (5 Matches)
+  const asiaStadium1 = {
     id: 'a2000000-0000-0000-0000-000000000001',
     name: 'Lusail Iconic Stadium',
     city: 'Lusail',
@@ -119,13 +160,22 @@ const initSeedData = () => {
     capacity: 88966,
     created_at: new Date().toISOString(),
   };
-  shards.asia.stadiums.push(asiaStadium);
+  const asiaStadium2 = {
+    id: 'a2000000-0000-0000-0000-000000000002',
+    name: 'Saitama Stadium 2002',
+    city: 'Saitama',
+    country: 'Japan',
+    region: 'asia',
+    capacity: 63700,
+    created_at: new Date().toISOString(),
+  };
+  shards.asia.stadiums.push(asiaStadium1, asiaStadium2);
 
   const matchAsia1 = {
     id: 'm2000000-0000-0000-0000-000000000001',
     home_team: 'Japan',
     away_team: 'South Korea',
-    stadium_id: asiaStadium.id,
+    stadium_id: asiaStadium1.id,
     match_date: new Date(Date.now() + 8 * 24 * 60 * 60 * 1000).toISOString(),
     tournament_stage: 'Group Stage',
     status: 'upcoming',
@@ -135,15 +185,46 @@ const initSeedData = () => {
     id: 'm2000000-0000-0000-0000-000000000002',
     home_team: 'Saudi Arabia',
     away_team: 'Australia',
-    stadium_id: asiaStadium.id,
+    stadium_id: asiaStadium1.id,
     match_date: new Date(Date.now() + 12 * 24 * 60 * 60 * 1000).toISOString(),
     tournament_stage: 'Group Stage',
     status: 'upcoming',
     created_at: new Date().toISOString(),
   };
-  shards.asia.matches.push(matchAsia1, matchAsia2);
+  const matchAsia3 = {
+    id: 'm2000000-0000-0000-0000-000000000003',
+    home_team: 'Qatar',
+    away_team: 'Iran',
+    stadium_id: asiaStadium2.id,
+    match_date: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000).toISOString(),
+    tournament_stage: 'Group Stage',
+    status: 'upcoming',
+    created_at: new Date().toISOString(),
+  };
+  const matchAsia4 = {
+    id: 'm2000000-0000-0000-0000-000000000004',
+    home_team: 'Japan',
+    away_team: 'Spain',
+    stadium_id: asiaStadium2.id,
+    match_date: new Date(Date.now() + 11 * 24 * 60 * 60 * 1000).toISOString(),
+    tournament_stage: 'Round of 16',
+    status: 'upcoming',
+    created_at: new Date().toISOString(),
+  };
+  const matchAsia5 = {
+    id: 'm2000000-0000-0000-0000-000000000005',
+    home_team: 'Saudi Arabia',
+    away_team: 'Japan',
+    stadium_id: asiaStadium1.id,
+    match_date: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+    tournament_stage: 'Quarter-Final',
+    status: 'upcoming',
+    created_at: new Date().toISOString(),
+  };
+  shards.asia.matches.push(matchAsia1, matchAsia2, matchAsia3, matchAsia4, matchAsia5);
 
-  const naStadium = {
+  // 3. North America Shard - Hosts: USA, Canada, Mexico (5 Matches)
+  const naStadium1 = {
     id: 'n3000000-0000-0000-0000-000000000001',
     name: 'MetLife Stadium',
     city: 'East Rutherford, NJ',
@@ -152,21 +233,80 @@ const initSeedData = () => {
     capacity: 82500,
     created_at: new Date().toISOString(),
   };
-  shards.north_america.stadiums.push(naStadium);
+  const naStadium2 = {
+    id: 'n3000000-0000-0000-0000-000000000002',
+    name: 'Estadio Azteca',
+    city: 'Mexico City',
+    country: 'Mexico',
+    region: 'north_america',
+    capacity: 87523,
+    created_at: new Date().toISOString(),
+  };
+  const naStadium3 = {
+    id: 'n3000000-0000-0000-0000-000000000003',
+    name: 'BC Place',
+    city: 'Vancouver',
+    country: 'Canada',
+    region: 'north_america',
+    capacity: 54500,
+    created_at: new Date().toISOString(),
+  };
+  shards.north_america.stadiums.push(naStadium1, naStadium2, naStadium3);
 
   const matchNA1 = {
     id: 'm3000000-0000-0000-0000-000000000001',
     home_team: 'USA',
     away_team: 'Mexico',
-    stadium_id: naStadium.id,
+    stadium_id: naStadium1.id,
     match_date: new Date(Date.now() + 9 * 24 * 60 * 60 * 1000).toISOString(),
+    tournament_stage: 'Group Stage - Opening Match',
+    status: 'upcoming',
+    created_at: new Date().toISOString(),
+  };
+  const matchNA2 = {
+    id: 'm3000000-0000-0000-0000-000000000002',
+    home_team: 'Canada',
+    away_team: 'Morocco',
+    stadium_id: naStadium3.id,
+    match_date: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
     tournament_stage: 'Group Stage',
     status: 'upcoming',
     created_at: new Date().toISOString(),
   };
-  shards.north_america.matches.push(matchNA1);
+  const matchNA3 = {
+    id: 'm3000000-0000-0000-0000-000000000003',
+    home_team: 'Mexico',
+    away_team: 'Germany',
+    stadium_id: naStadium2.id,
+    match_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    tournament_stage: 'Group Stage',
+    status: 'upcoming',
+    created_at: new Date().toISOString(),
+  };
+  const matchNA4 = {
+    id: 'm3000000-0000-0000-0000-000000000004',
+    home_team: 'USA',
+    away_team: 'Netherlands',
+    stadium_id: naStadium1.id,
+    match_date: new Date(Date.now() + 11 * 24 * 60 * 60 * 1000).toISOString(),
+    tournament_stage: 'Round of 16',
+    status: 'upcoming',
+    created_at: new Date().toISOString(),
+  };
+  const matchNA5 = {
+    id: 'm3000000-0000-0000-0000-000000000005',
+    home_team: 'Argentina',
+    away_team: 'France',
+    stadium_id: naStadium1.id,
+    match_date: new Date(Date.now() + 18 * 24 * 60 * 60 * 1000).toISOString(),
+    tournament_stage: 'World Cup Grand Final',
+    status: 'upcoming',
+    created_at: new Date().toISOString(),
+  };
+  shards.north_america.matches.push(matchNA1, matchNA2, matchNA3, matchNA4, matchNA5);
 
-  const saStadium = {
+  // 4. South America Shard (5 Matches)
+  const saStadium1 = {
     id: 's4000000-0000-0000-0000-000000000001',
     name: 'Maracana Stadium',
     city: 'Rio de Janeiro',
@@ -175,19 +315,68 @@ const initSeedData = () => {
     capacity: 78838,
     created_at: new Date().toISOString(),
   };
-  shards.south_america.stadiums.push(saStadium);
+  const saStadium2 = {
+    id: 's4000000-0000-0000-0000-000000000002',
+    name: 'Estadio Monumental',
+    city: 'Buenos Aires',
+    country: 'Argentina',
+    region: 'south_america',
+    capacity: 84567,
+    created_at: new Date().toISOString(),
+  };
+  shards.south_america.stadiums.push(saStadium1, saStadium2);
 
   const matchSA1 = {
     id: 'm4000000-0000-0000-0000-000000000001',
     home_team: 'Brazil',
     away_team: 'Argentina',
-    stadium_id: saStadium.id,
+    stadium_id: saStadium1.id,
     match_date: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
-    tournament_stage: 'World Cup Final',
+    tournament_stage: 'Semi-Final Superclasico',
     status: 'upcoming',
     created_at: new Date().toISOString(),
   };
-  shards.south_america.matches.push(matchSA1);
+  const matchSA2 = {
+    id: 'm4000000-0000-0000-0000-000000000002',
+    home_team: 'Uruguay',
+    away_team: 'Colombia',
+    stadium_id: saStadium2.id,
+    match_date: new Date(Date.now() + 8 * 24 * 60 * 60 * 1000).toISOString(),
+    tournament_stage: 'Quarter-Final',
+    status: 'upcoming',
+    created_at: new Date().toISOString(),
+  };
+  const matchSA3 = {
+    id: 'm4000000-0000-0000-0000-000000000003',
+    home_team: 'Brazil',
+    away_team: 'Chile',
+    stadium_id: saStadium1.id,
+    match_date: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString(),
+    tournament_stage: 'Round of 16',
+    status: 'upcoming',
+    created_at: new Date().toISOString(),
+  };
+  const matchSA4 = {
+    id: 'm4000000-0000-0000-0000-000000000004',
+    home_team: 'Argentina',
+    away_team: 'Netherlands',
+    stadium_id: saStadium2.id,
+    match_date: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString(),
+    tournament_stage: 'Quarter-Final',
+    status: 'upcoming',
+    created_at: new Date().toISOString(),
+  };
+  const matchSA5 = {
+    id: 'm4000000-0000-0000-0000-000000000005',
+    home_team: 'Colombia',
+    away_team: 'Ecuador',
+    stadium_id: saStadium1.id,
+    match_date: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000).toISOString(),
+    tournament_stage: 'Group Stage',
+    status: 'upcoming',
+    created_at: new Date().toISOString(),
+  };
+  shards.south_america.matches.push(matchSA1, matchSA2, matchSA3, matchSA4, matchSA5);
 
   const allShardsList = Object.values(shards);
   for (const shard of allShardsList) {
@@ -367,7 +556,14 @@ const loadSnapshot = () => {
       if (Array.isArray(saved.bookings)) shard.bookings = saved.bookings;
       if (Array.isArray(saved.bookingSeats)) shard.bookingSeats = saved.bookingSeats;
       if (Array.isArray(saved.payments)) shard.payments = saved.payments;
-      if (Array.isArray(saved.seats) && saved.seats.length > 0) shard.seats = saved.seats;
+      if (Array.isArray(saved.seats) && saved.seats.length > 0) {
+        const savedStatusMap = new Map(saved.seats.map((s) => [s.id, s.status]));
+        shard.seats.forEach((seat) => {
+          if (savedStatusMap.has(seat.id)) {
+            seat.status = savedStatusMap.get(seat.id);
+          }
+        });
+      }
     }
   } catch (err) {}
 };

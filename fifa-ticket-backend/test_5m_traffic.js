@@ -2,7 +2,7 @@ const targetUrl = (process.argv[2] || 'http://localhost:5000').replace(/\/$/, ''
 
 async function runLiveStressSuite() {
   console.log('-----------------------------------------------------------------------');
-  console.log('FIFA 2026 TICKETING PLATFORM - 5-MILLION TRAFFIC LOAD TEST');
+  console.log('FIFA 2026 TICKETING PLATFORM - 50-MILLION TRAFFIC LOAD TEST');
   console.log('-----------------------------------------------------------------------');
   console.log(`Target Endpoint : ${targetUrl}`);
   console.log('-----------------------------------------------------------------------\n');
@@ -25,12 +25,12 @@ async function runLiveStressSuite() {
     console.log(`Concurrent HTTP Burst Complete: ${successCount}/${burstSize} succeeded in ${burstElapsed}ms`);
     console.log(`Gateway Throughput: ${Math.round((burstSize / (burstElapsed || 1)) * 1000).toLocaleString()} req/sec\n`);
 
-    console.log('[Step 3/3] Running 5,000,000 Traffic Load & Seat Reservation Contention Test...');
+    console.log('[Step 3/3] Running 50,000,000 Traffic Load & Seat Reservation Contention Test...');
     const stressRes = await fetch(`${targetUrl}/api/admin/traffic-test`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        targetTraffic: 5000000,
+        targetTraffic: 50000000,
         concurrentRequests: 1000,
       }),
     });

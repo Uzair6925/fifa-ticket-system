@@ -6,14 +6,28 @@ const teamCodes = {
   France: 'FRA',
   Germany: 'GER',
   Spain: 'ESP',
+  Portugal: 'POR',
+  Netherlands: 'NED',
+  Belgium: 'BEL',
+  Croatia: 'CRO',
+  Italy: 'ITA',
+  Denmark: 'DEN',
   Japan: 'JPN',
   'South Korea': 'KOR',
   'Saudi Arabia': 'KSA',
   Australia: 'AUS',
+  Qatar: 'QAT',
+  Iran: 'IRN',
   USA: 'USA',
   Mexico: 'MEX',
+  Canada: 'CAN',
+  Morocco: 'MAR',
   Brazil: 'BRA',
   Argentina: 'ARG',
+  Uruguay: 'URU',
+  Colombia: 'COL',
+  Chile: 'CHI',
+  Ecuador: 'ECU',
 };
 
 const regionLabels = {
@@ -134,7 +148,9 @@ export default function MatchList({ matches, loading, onSelectMatch }) {
                         {teamCodes[match.home_team] || match.home_team.slice(0, 3).toUpperCase()}
                       </div>
                       <p className="text-sm font-extrabold text-white truncate">{match.home_team}</p>
-                      <span className="text-[10px] text-gray-500 font-medium">Home</span>
+                      <span className="text-[10px] text-gray-500 font-medium">
+                        {['USA', 'Canada', 'Mexico'].includes(match.home_team) ? 'Host Nation' : 'National Team'}
+                      </span>
                     </div>
 
                     <div className="px-3">
@@ -148,7 +164,9 @@ export default function MatchList({ matches, loading, onSelectMatch }) {
                         {teamCodes[match.away_team] || match.away_team.slice(0, 3).toUpperCase()}
                       </div>
                       <p className="text-sm font-extrabold text-white truncate">{match.away_team}</p>
-                      <span className="text-[10px] text-gray-500 font-medium">Away</span>
+                      <span className="text-[10px] text-gray-500 font-medium">
+                        {['USA', 'Canada', 'Mexico'].includes(match.away_team) ? 'Host Nation' : 'National Team'}
+                      </span>
                     </div>
                   </div>
 

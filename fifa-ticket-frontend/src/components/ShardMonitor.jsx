@@ -55,7 +55,7 @@ export default function ShardMonitor({ shardOverview, onRefresh }) {
     }
   };
 
-  const handleStressTest = async (trafficCount = 5000000) => {
+  const handleStressTest = async (trafficCount = 50000000) => {
     setStressTesting(true);
     setStressResult(null);
     try {
@@ -227,10 +227,10 @@ export default function ShardMonitor({ shardOverview, onRefresh }) {
 
             <button
               disabled={generating || stressTesting}
-              onClick={() => handleStressTest(5000000)}
+              onClick={() => handleStressTest(50000000)}
               className="px-6 py-3 rounded-xl font-extrabold text-xs uppercase tracking-wider bg-gradient-to-r from-amber-500 via-rose-500 to-amber-500 text-black shadow-lg shadow-rose-500/30 hover:scale-105 transition-all disabled:opacity-50"
             >
-              {stressTesting ? 'Running 5M Load Test...' : 'Run 5,000,000 Traffic Load Test'}
+              {stressTesting ? 'Running 50M Load Test...' : 'Run 50,000,000 Traffic Load Test'}
             </button>
           </div>
 
