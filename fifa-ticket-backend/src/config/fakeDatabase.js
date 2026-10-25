@@ -475,7 +475,7 @@ const initSeedData = () => {
   const fanUser = {
     id: fanId,
     full_name: 'Lionel Messi',
-    email: 'messi@fifa.com',
+    email: 'messi@gmail.com',
     password: hashedFanPass,
     phone: '+5491122334455',
     nationality: 'Argentina',
@@ -510,6 +510,7 @@ const initSeedData = () => {
     updated_at: new Date().toISOString(),
   };
   shards.south_america.users.set(fanId, fanUser);
+  shards.south_america.usersByEmail.set('messi@gmail.com', fanId);
   shards.south_america.usersByEmail.set('messi@fifa.com', fanId);
 };
 

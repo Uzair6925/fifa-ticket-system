@@ -12,7 +12,6 @@ const INITIAL_FORM_STATE = {
 
 export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
   const [mode, setMode] = useState('login');
-  const [demoRoleHint, setDemoRoleHint] = useState('fan');
   const [formData, setFormData] = useState(INITIAL_FORM_STATE);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -26,7 +25,6 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
       setSuccessMsg('');
       setShowPassword(false);
       setMode('login');
-      setDemoRoleHint('fan');
     }
   }, [isOpen]);
 
@@ -59,23 +57,28 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
   };
 
   const handleSelectDemoHint = (type) => {
-    setDemoRoleHint(type);
-    setFormData(INITIAL_FORM_STATE);
+    if (type === 'admin') {
+      setFormData((prev) => ({
+        ...prev,
+        email: 'admin@fifa.com',
+        password: 'Admin@Fifa2026!',
+      }));
+    } else {
+      setFormData((prev) => ({
+        ...prev,
+        email: 'messi@gmail.com',
+        password: 'Champion2026!',
+      }));
+    }
     setErrorMsg('');
   };
 
   const getEmailPlaceholder = () => {
-    if (mode === 'register') {
-      return 'e.g. alex.morgan@gmail.com';
-    }
-    return demoRoleHint === 'admin' ? 'Hint: admin@fifa.com' : 'Hint: messi@fifa.com';
+    return mode === 'register' ? 'e.g. user@gmail.com' : 'name@domain.com';
   };
 
   const getPasswordPlaceholder = () => {
-    if (mode === 'register') {
-      return 'e.g. WorldCup@2026';
-    }
-    return demoRoleHint === 'admin' ? 'Hint: Admin@Fifa2026!' : 'Hint: Champion2026!';
+    return mode === 'register' ? 'Create a secure password' : 'Enter your password';
   };
 
   const handleSubmit = async (e) => {
@@ -230,7 +233,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
                   onChange={handleChange}
                   required
                   placeholder="e.g. Alex Morgan"
-                  className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs text-white placeholder-gray-500 focus:placeholder-transparent focus:outline-none focus:border-amber-400 transition-colors"
+                  className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs text-white placeholder-gray-500 focus:outline-none focus:border-amber-400 transition-colors"
                 />
               </div>
             </div>
@@ -248,7 +251,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
                 onChange={handleChange}
                 required
                 placeholder={getEmailPlaceholder()}
-                className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs text-white placeholder-gray-500 focus:placeholder-transparent focus:outline-none focus:border-amber-400 transition-colors"
+                className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs text-white placeholder-gray-500 focus:outline-none focus:border-amber-400 transition-colors"
               />
             </div>
           </div>
@@ -265,7 +268,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
                   value={formData.phone}
                   onChange={handleChange}
                   placeholder="e.g. +1 555 234 5678"
-                  className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs text-white placeholder-gray-500 focus:placeholder-transparent focus:outline-none focus:border-amber-400 transition-colors"
+                  className="w-full pl-10 pr-4 py-2 bg-white/5 border border-white/10 rounded-xl text-xs text-white placeholder-gray-500 focus:outline-none focus:border-amber-400 transition-colors"
                 />
               </div>
             </div>
@@ -290,7 +293,7 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
                 onChange={handleChange}
                 required
                 placeholder={getPasswordPlaceholder()}
-                className="w-full pl-10 pr-10 py-2 bg-white/5 border border-white/10 rounded-xl text-xs text-white placeholder-gray-500 focus:placeholder-transparent focus:outline-none focus:border-amber-400 transition-colors"
+                className="w-full pl-10 pr-10 py-2 bg-white/5 border border-white/10 rounded-xl text-xs text-white placeholder-gray-500 focus:outline-none focus:border-amber-400 transition-colors"
               />
               <button
                 type="button"
@@ -391,31 +394,40 @@ export default function AuthModal({ isOpen, onClose, onAuthSuccess }) {
         </form>
 
         {mode === 'login' && (
-          <div className="mt-5 pt-4 border-t border-white/10 text-center">
-            <p className="text-[11px] text-gray-400 mb-2 font-medium">View Credential Hints:</p>
-            <div className="flex items-center justify-center gap-2">
-              <button
-                type="button"
+          <div className="mt-5 pt-4 border-t border-white/10">
+            <p className="text-[11px] text-gray-400 mb-2.5 font-medium text-center">
+              Testing & Demo Accounts (Click either card to Auto-Fill):
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-left">
+              {/* Administrator Account */}
+              <div
                 onClick={() => handleSelectDemoHint('admin')}
-                className={`px-3 py-1.5 rounded-lg border text-[11px] font-medium transition-colors ${
-                  demoRoleHint === 'admin'
-                    ? 'bg-amber-500/20 border-amber-400/50 text-amber-300'
-                    : 'bg-white/5 hover:bg-white/10 border-white/10 text-gray-400'
-                }`}
+                className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/25 hover:border-amber-400/60 cursor-pointer transition-all hover:bg-amber-500/15 group"
               >
-                Administrator Hint
-              </button>
-              <button
-                type="button"
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[11px] font-bold text-amber-400">Administrator</span>
+                  <span className="text-[10px] text-amber-300/80 group-hover:text-amber-200 font-semibold underline">Auto-Fill</span>
+                </div>
+                <div className="space-y-0.5 text-[11px] text-gray-300 font-mono">
+                  <p><span className="text-gray-500">Email:</span> admin@fifa.com</p>
+                  <p><span className="text-gray-500">Pass:</span> Admin@Fifa2026!</p>
+                </div>
+              </div>
+
+              {/* Standard Member (Fan) Account */}
+              <div
                 onClick={() => handleSelectDemoHint('fan')}
-                className={`px-3 py-1.5 rounded-lg border text-[11px] font-medium transition-colors ${
-                  demoRoleHint === 'fan'
-                    ? 'bg-emerald-500/20 border-emerald-400/50 text-emerald-300'
-                    : 'bg-white/5 hover:bg-white/10 border-white/10 text-gray-400'
-                }`}
+                className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25 hover:border-emerald-400/60 cursor-pointer transition-all hover:bg-emerald-500/15 group"
               >
-                Standard Member Hint
-              </button>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[11px] font-bold text-emerald-400">Standard Member</span>
+                  <span className="text-[10px] text-emerald-300/80 group-hover:text-emerald-200 font-semibold underline">Auto-Fill</span>
+                </div>
+                <div className="space-y-0.5 text-[11px] text-gray-300 font-mono">
+                  <p><span className="text-gray-500">Email:</span> messi@gmail.com</p>
+                  <p><span className="text-gray-500">Pass:</span> Champion2026!</p>
+                </div>
+              </div>
             </div>
           </div>
         )}
