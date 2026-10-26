@@ -255,12 +255,99 @@ export default function SeatSelectorModal({ match, user, onClose, onAuthRequired
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-4">
-              <div className="w-full h-24 rounded-2xl bg-gradient-to-b from-emerald-900/60 to-emerald-950/80 border border-emerald-500/30 flex flex-col items-center justify-center relative overflow-hidden">
-                <div className="w-20 h-20 rounded-full border border-emerald-400/20 absolute -top-10" />
-                <div className="w-full h-0.5 bg-emerald-400/25 absolute top-1/2" />
-                <span className="font-heading font-black text-[11px] tracking-widest text-emerald-300 uppercase z-10 bg-emerald-950/80 px-4 py-1 rounded-full border border-emerald-500/30">
-                  Stadium Pitch
-                </span>
+              <div className="rounded-2xl border border-white/10 bg-slate-950/70 p-3 sm:p-5">
+                <div className="flex flex-wrap items-start justify-between gap-2 px-1 pb-3">
+                  <div>
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-white">Stadium enclosure</h3>
+                    <p className="mt-1 text-[10px] text-gray-400">Four covered stands · lower and upper seating tiers</p>
+                  </div>
+                  <span className="rounded-full border border-amber-400/20 bg-amber-500/10 px-2.5 py-1 text-[9px] font-semibold uppercase tracking-wider text-amber-300">
+                    Illustrative plan
+                  </span>
+                </div>
+                <svg
+                  viewBox="0 0 760 430"
+                  role="img"
+                  aria-labelledby="stadium-plan-title stadium-plan-description"
+                  className="block h-auto w-full"
+                >
+                  <title id="stadium-plan-title">{match.stadium_name || 'Football stadium'} enclosure plan</title>
+                  <desc id="stadium-plan-description">
+                    Top-down illustration of an enclosed football ground with north, east, south, and west stands,
+                    upper and lower seating tiers, corner entrances, and a marked pitch.
+                  </desc>
+                  <defs>
+                    <linearGradient id="stand-fill" x1="0" x2="0" y1="0" y2="1">
+                      <stop offset="0%" stopColor="#475569" />
+                      <stop offset="100%" stopColor="#1e293b" />
+                    </linearGradient>
+                    <linearGradient id="pitch-fill" x1="0" x2="1" y1="0" y2="1">
+                      <stop offset="0%" stopColor="#15803d" />
+                      <stop offset="100%" stopColor="#14532d" />
+                    </linearGradient>
+                    <pattern id="stand-seats" width="14" height="12" patternUnits="userSpaceOnUse">
+                      <path d="M0 11.5H14" stroke="#cbd5e1" strokeOpacity=".18" />
+                    </pattern>
+                  </defs>
+
+                  <rect x="8" y="8" width="744" height="414" rx="76" fill="#0f172a" stroke="#64748b" strokeOpacity=".55" strokeWidth="2" />
+
+                  <g fill="url(#stand-fill)" stroke="#94a3b8" strokeOpacity=".45" strokeWidth="1.5">
+                    <rect x="174" y="20" width="412" height="96" rx="28" />
+                    <rect x="174" y="314" width="412" height="96" rx="28" />
+                    <rect x="20" y="128" width="188" height="174" rx="36" />
+                    <rect x="552" y="128" width="188" height="174" rx="36" />
+                  </g>
+                  <g fill="url(#stand-seats)" opacity=".85">
+                    <rect x="184" y="28" width="392" height="80" rx="22" />
+                    <rect x="184" y="322" width="392" height="80" rx="22" />
+                    <rect x="28" y="138" width="172" height="154" rx="28" />
+                    <rect x="560" y="138" width="172" height="154" rx="28" />
+                  </g>
+
+                  <g fill="#f59e0b" fillOpacity=".9">
+                    <path d="M88 125h50v8H88zM622 125h50v8h-50zM88 297h50v8H88zM622 297h50v8h-50z" />
+                  </g>
+                  <g fill="#fbbf24" fontFamily="sans-serif" fontSize="9" fontWeight="700" letterSpacing="1.2" textAnchor="middle">
+                    <text x="113" y="119">GATE</text>
+                    <text x="647" y="119">GATE</text>
+                    <text x="113" y="319">GATE</text>
+                    <text x="647" y="319">GATE</text>
+                  </g>
+
+                  <g fill="#f8fafc" fontFamily="sans-serif" fontSize="11" fontWeight="800" letterSpacing="1.5" textAnchor="middle">
+                    <text x="380" y="49">NORTH STAND</text>
+                    <text x="380" y="343">SOUTH STAND</text>
+                    <text x="114" y="207" transform="rotate(-90 114 207)">WEST STAND</text>
+                    <text x="646" y="207" transform="rotate(90 646 207)">EAST STAND</text>
+                  </g>
+                  <g fill="#cbd5e1" fontFamily="sans-serif" fontSize="8" fontWeight="600" letterSpacing="1" textAnchor="middle">
+                    <text x="380" y="67">UPPER TIER</text>
+                    <text x="380" y="94">LOWER TIER</text>
+                    <text x="380" y="361">LOWER TIER</text>
+                    <text x="380" y="388">UPPER TIER</text>
+                    <text x="143" y="207" transform="rotate(-90 143 207)">LOWER · UPPER TIERS</text>
+                    <text x="617" y="207" transform="rotate(90 617 207)">LOWER · UPPER TIERS</text>
+                  </g>
+
+                  <rect x="214" y="128" width="332" height="174" rx="6" fill="url(#pitch-fill)" stroke="#86efac" strokeOpacity=".8" strokeWidth="2" />
+                  <path d="M380 129v172M215 215h330" stroke="#dcfce7" strokeOpacity=".8" strokeWidth="1.5" fill="none" />
+                  <circle cx="380" cy="215" r="31" fill="none" stroke="#dcfce7" strokeOpacity=".8" strokeWidth="1.5" />
+                  <circle cx="380" cy="215" r="2.5" fill="#dcfce7" />
+                  <g fill="none" stroke="#dcfce7" strokeOpacity=".8" strokeWidth="1.5">
+                    <rect x="215" y="169" width="39" height="92" />
+                    <rect x="215" y="191" width="14" height="48" />
+                    <rect x="506" y="169" width="39" height="92" />
+                    <rect x="531" y="191" width="14" height="48" />
+                    <path d="M214 204h-5v22h5M546 204h5v22h-5" />
+                  </g>
+                  <g fill="#bbf7d0" fontFamily="sans-serif" fontSize="9" fontWeight="800" letterSpacing="2" textAnchor="middle">
+                    <text x="380" y="278">PLAYING FIELD</text>
+                  </g>
+                </svg>
+                <p className="px-1 pt-2 text-[10px] leading-relaxed text-gray-500">
+                  Illustrative enclosure only; exact stand, tier, and seat locations depend on the venue’s official seating plan.
+                </p>
               </div>
 
               <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-gray-300 py-2 bg-white/[0.02] rounded-xl border border-white/5">
