@@ -78,8 +78,9 @@ export const api = {
     return res.json();
   },
 
-  getSeatsForMatch: async (matchId) => {
-    const res = await fetch(`${API_BASE_URL}/seats/match/${matchId}`);
+  getSeatsForMatch: async (matchId, page = 1, limit = 100) => {
+    const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+    const res = await fetch(`${API_BASE_URL}/seats/match/${matchId}?${params}`);
     return res.json();
   },
 

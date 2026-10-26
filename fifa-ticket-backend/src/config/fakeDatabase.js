@@ -386,41 +386,27 @@ const initSeedData = () => {
       const catGen = { id: uuidv4(), stadium_id: match.stadium_id, name: 'Category 2 - Standard', base_price: 150.00 };
       shard.categories.push(catVIP, catPrem, catGen);
 
-      for (let s = 1; s <= 10; s++) {
+      const demoSeatCount = 5000;
+      const vipSeatCount = 500;
+      const premiumSeatCount = 1250;
+
+      for (let s = 1; s <= demoSeatCount; s++) {
+        const sectionNumber = Math.floor((s - 1) / 500) + 1;
+        const rowNumber = Math.floor(((s - 1) % 500) / 10) + 1;
+        const seatInRow = ((s - 1) % 10) + 1;
+        const isVip = s <= vipSeatCount;
+        const isPremium = s > vipSeatCount && s <= vipSeatCount + premiumSeatCount;
+        const category = isVip ? catVIP : isPremium ? catPrem : catGen;
+        const section = isVip ? `VIP-${sectionNumber}` : isPremium ? `PREM-${sectionNumber}` : `GEN-${sectionNumber}`;
+
         shard.seats.push({
           id: uuidv4(),
           match_id: match.id,
-          category_id: catVIP.id,
-          seat_number: `V-${s}`,
-          row_number: '1',
-          section: 'VIP',
-          price: 550.00,
-          status: 'available',
-          created_at: new Date().toISOString(),
-        });
-      }
-      for (let s = 1; s <= 15; s++) {
-        shard.seats.push({
-          id: uuidv4(),
-          match_id: match.id,
-          category_id: catPrem.id,
-          seat_number: `P1-${s}`,
-          row_number: '5',
-          section: 'PREMIUM',
-          price: 320.00,
-          status: 'available',
-          created_at: new Date().toISOString(),
-        });
-      }
-      for (let s = 1; s <= 25; s++) {
-        shard.seats.push({
-          id: uuidv4(),
-          match_id: match.id,
-          category_id: catGen.id,
-          seat_number: `G1-${s}`,
-          row_number: '12',
-          section: 'STANDARD',
-          price: 150.00,
+          category_id: category.id,
+          seat_number: `${sectionNumber}-${rowNumber}-${seatInRow}`,
+          row_number: String(rowNumber),
+          section,
+          price: isVip ? 550.00 : isPremium ? 320.00 : 150.00,
           status: 'available',
           created_at: new Date().toISOString(),
         });
@@ -710,8 +696,17 @@ const executeSql = async (regionName, queryText, values = []) => {
 
   if (query.match(/FROM seats s/i) && query.match(/WHERE s\.match_id = \$1/i)) {
     const matchId = values[0];
-    const seats = shard.seats
+    const matchingSeats = shard.seats
       .filter((s) => s.match_id === matchId)
+      .sort((a, b) =>
+        a.section.localeCompare(b.section, undefined, { numeric: true }) ||
+        Number(a.row_number) - Number(b.row_number) ||
+        a.seat_number.localeCompare(b.seat_number, undefined, { numeric: true })
+      );
+    const offset = query.match(/OFFSET \$3/i) ? Number(values[2]) || 0 : 0;
+    const limit = query.match(/LIMIT \$2/i) ? Number(values[1]) : matchingSeats.length;
+    const seats = matchingSeats
+      .slice(offset, offset + limit)
       .map((s) => {
         const cat = shard.categories.find((c) => c.id === s.category_id);
         return {
@@ -726,6 +721,11 @@ const executeSql = async (regionName, queryText, values = []) => {
       });
 
     return { rows: seats, rowCount: seats.length };
+  }
+
+  if (query.match(/SELECT COUNT\(id\) AS total FROM seats WHERE match_id = \$1/i)) {
+    const total = shard.seats.filter((s) => s.match_id === values[0]).length;
+    return { rows: [{ total }], rowCount: 1 };
   }
 
   if (query.match(/FROM seats/i) && query.match(/WHERE id = ANY/i)) {

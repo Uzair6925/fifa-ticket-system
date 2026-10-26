@@ -28,6 +28,52 @@ const teamsData = {
   south_am: ['Brazil', 'Argentina', 'Uruguay', 'Colombia']
 };
 
+async function insertSeats(client, matchId, capacity, categories) {
+  const rowsPerSection = Math.ceil(capacity / 100);
+  const batchSize = 1000;
+
+  for (let offset = 0; offset < capacity; offset += batchSize) {
+    const batchCount = Math.min(batchSize, capacity - offset);
+    const values = [];
+    const placeholders = [];
+
+    for (let i = 0; i < batchCount; i++) {
+      const seatIndex = offset + i;
+      const sectionNumber = Math.floor(seatIndex / (rowsPerSection * 10)) + 1;
+      const rowNumber = Math.floor((seatIndex % (rowsPerSection * 10)) / 10) + 1;
+      const seatInRow = (seatIndex % 10) + 1;
+      const vipThreshold = Math.floor(capacity * 0.05);
+      const premiumThreshold = Math.floor(capacity * 0.25);
+      const category = seatIndex < vipThreshold
+        ? categories.vip
+        : seatIndex < premiumThreshold
+          ? categories.premium
+          : categories.general;
+      const valueOffset = values.length;
+
+      values.push(
+        uuidv4(),
+        matchId,
+        category.id,
+        `${sectionNumber}-${rowNumber}-${seatInRow}`,
+        String(rowNumber),
+        `S-${sectionNumber}`,
+        category.price
+      );
+      placeholders.push(
+        `($${valueOffset + 1}, $${valueOffset + 2}, $${valueOffset + 3}, $${valueOffset + 4}, $${valueOffset + 5}, $${valueOffset + 6}, $${valueOffset + 7}, 'available')`
+      );
+    }
+
+    await client.query(
+      `INSERT INTO seats (id, match_id, category_id, seat_number, row_number, section, price, status)
+       VALUES ${placeholders.join(', ')}
+       ON CONFLICT (match_id, seat_number) DO NOTHING`,
+      values
+    );
+  }
+}
+
 async function seed() {
   console.log('🌱 Seeding databases with sample data...');
 
@@ -38,7 +84,7 @@ async function seed() {
 
     try {
       await client.connect();
-      console.log(`\n📦 Connected to ${config.db}...`);
+      console.log(`\n Connected to ${config.db}...`);
 
       // 1. Insert Stadium
       const stadium = stadiumsData[config.region][0];
@@ -66,23 +112,23 @@ async function seed() {
       console.log(`⚽ Inserted Match: ${teams[0]} vs ${teams[1]}`);
 
       // 3. Insert Seat Categories
-      const catId = uuidv4();
+      const categories = {
+        vip: { id: uuidv4(), name: 'VIP Hospitality', price: 550.00 },
+        premium: { id: uuidv4(), name: 'Category 1 - Premium', price: 320.00 },
+        general: { id: uuidv4(), name: 'Category 2 - Standard', price: 150.00 },
+      };
       await client.query(`
         INSERT INTO seat_categories (id, stadium_id, name, base_price)
-        VALUES ($1, $2, 'General', 150.00)
+        VALUES ($1, $2, $3, $4), ($5, $2, $6, $7), ($8, $2, $9, $10)
         ON CONFLICT (id) DO NOTHING
-      `, [catId, stadiumId]);
+      `, [
+        categories.vip.id, stadiumId, categories.vip.name, categories.vip.price,
+        categories.premium.id, categories.premium.name, categories.premium.price,
+        categories.general.id, categories.general.name, categories.general.price,
+      ]);
 
-      // 4. Insert some Seats
-      for (let i = 1; i <= 5; i++) {
-        const seatId = uuidv4();
-        await client.query(`
-          INSERT INTO seats (id, match_id, category_id, seat_number, row_number, section, price, status)
-          VALUES ($1, $2, $3, $4, 'A', '101', 150.00, 'available')
-          ON CONFLICT (match_id, seat_number) DO NOTHING
-        `, [seatId, matchId, catId, `A-${i}`]);
-      }
-      console.log(`💺 Inserted Seats for match.`);
+      await insertSeats(client, matchId, stadium.capacity, categories);
+      console.log(`💺 Created ${stadium.capacity.toLocaleString()} seats for the match.`);
 
       await client.end();
     } catch (err) {

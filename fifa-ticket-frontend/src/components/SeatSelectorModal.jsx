@@ -18,7 +18,9 @@ export default function SeatSelectorModal({ match, user, onClose, onAuthRequired
 
   const [seats, setSeats] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedSeatIds, setSelectedSeatIds] = useState([]);
+  const [selectedSeats, setSelectedSeats] = useState([]);
+  const [seatPage, setSeatPage] = useState(1);
+  const [totalSeatCount, setTotalSeatCount] = useState(0);
   const [heldSeatIds, setHeldSeatIds] = useState([]);
   const [holdTimer, setHoldTimer] = useState(null);
   const [paymentMethod, setPaymentMethod] = useState(savedMethods[0]);
@@ -26,12 +28,13 @@ export default function SeatSelectorModal({ match, user, onClose, onAuthRequired
   const [actionLoading, setActionLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  const fetchSeats = async () => {
+  const fetchSeats = async (page = seatPage) => {
     try {
       setLoading(true);
-      const res = await api.getSeatsForMatch(match.id);
+      const res = await api.getSeatsForMatch(match.id, page);
       if (res.success) {
         setSeats(res.data);
+        setTotalSeatCount(res.totalCount ?? res.count ?? res.data.length);
       }
     } catch (err) {
       setErrorMsg('Unable to load stadium seating map.');
@@ -41,8 +44,15 @@ export default function SeatSelectorModal({ match, user, onClose, onAuthRequired
   };
 
   useEffect(() => {
-    fetchSeats();
+    setSeatPage(1);
+    setSelectedSeats([]);
+    setHeldSeatIds([]);
+    setHoldTimer(null);
   }, [match.id]);
+
+  useEffect(() => {
+    fetchSeats(seatPage);
+  }, [match.id, seatPage]);
 
   useEffect(() => {
     if (holdTimer === null || holdTimer <= 0) return;
@@ -67,8 +77,10 @@ export default function SeatSelectorModal({ match, user, onClose, onAuthRequired
     if (seat.status === 'booked' || seat.status === 'held') return;
     setErrorMsg('');
 
-    setSelectedSeatIds((prev) =>
-      prev.includes(seat.id) ? prev.filter((id) => id !== seat.id) : [...prev, seat.id]
+    setSelectedSeats((prev) =>
+      prev.some((selected) => selected.id === seat.id)
+        ? prev.filter((selected) => selected.id !== seat.id)
+        : [...prev, seat]
     );
   };
 
@@ -78,6 +90,7 @@ export default function SeatSelectorModal({ match, user, onClose, onAuthRequired
       return;
     }
 
+    const selectedSeatIds = selectedSeats.map((seat) => seat.id);
     if (selectedSeatIds.length === 0) {
       setErrorMsg('Please select at least one available seat.');
       return;
@@ -142,7 +155,8 @@ export default function SeatSelectorModal({ match, user, onClose, onAuthRequired
     }
   };
 
-  const selectedSeatsList = seats.filter((s) => selectedSeatIds.includes(s.id));
+  const selectedSeatIds = selectedSeats.map((seat) => seat.id);
+  const selectedSeatsList = selectedSeats;
   const totalPrice = selectedSeatsList.reduce((sum, s) => sum + Number(s.price), 0);
 
   const formatTimer = (secs) => {
@@ -301,6 +315,29 @@ export default function SeatSelectorModal({ match, user, onClose, onAuthRequired
                         </button>
                       );
                     })}
+                  </div>
+                  <div className="flex items-center justify-between gap-3 mt-4 text-xs text-gray-400">
+                    <span>
+                      {totalSeatCount === 0
+                        ? 'No seats available'
+                        : `Showing ${(seatPage - 1) * 100 + 1}-${Math.min(seatPage * 100, totalSeatCount)} of ${totalSeatCount.toLocaleString()} seats`}
+                    </span>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setSeatPage((page) => Math.max(1, page - 1))}
+                        disabled={seatPage === 1 || loading}
+                        className="px-3 py-1 rounded-lg border border-white/10 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white/10"
+                      >
+                        Previous
+                      </button>
+                      <button
+                        onClick={() => setSeatPage((page) => page + 1)}
+                        disabled={seatPage * 100 >= totalSeatCount || loading}
+                        className="px-3 py-1 rounded-lg border border-white/10 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-white/10"
+                      >
+                        Next
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}

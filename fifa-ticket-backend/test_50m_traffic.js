@@ -31,7 +31,7 @@ async function runLiveStressSuite() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         targetTraffic: 50000000,
-        concurrentRequests: 1000,
+        concurrentRequests: 55000,
       }),
     });
     const stressData = await stressRes.json();
